@@ -1,7 +1,7 @@
 ---
 name: agile-multi-agent-delivery
 description: |
-  Run a software task like a disciplined multi-agent agile team. Use this skill when the user wants Codex to act like a real development team with requirement analysis, technical design, parallel agent delegation, implementation, verification, and a persistent iteration state file that survives `/clear` or a fresh thread. This skill should convert a request into a confirmed delivery brief, create or update a repository-local state file such as `.codex/agile/current-iteration.md`, delegate bounded parallel work to subagents, keep the main agent on the critical path, and maintain version, requirement detail, completion, risks, and next-step continuity.
+  Run a software task like a disciplined multi-agent agile team. Use this skill when the user wants Codex to act like a real development team with requirement analysis, technical design, parallel agent delegation, implementation, verification, and a persistent iteration state file that survives `/clear` or a fresh thread. This skill should convert a request into a confirmed delivery brief, create or update a repository-local state file such as `current-iteration.md`, delegate bounded parallel work to subagents, keep the main agent on the critical path, and maintain version, requirement detail, completion, risks, and next-step continuity.
 ---
 
 # Agile Multi Agent Delivery
@@ -38,9 +38,11 @@ The agent should behave like a compact agile team with explicit roles:
 
 The default repository-local state file for this skill is:
 
-- `.codex/agile/current-iteration.md`
+- `current-iteration.md`
 
-If the repository already has its own equivalent agile state file, reuse that instead of forcing a rename.
+If the repository root already has its own equivalent agile state file, reuse that instead of forcing a rename.
+
+Only fall back to another repository-local equivalent file when the root file does not exist and the repository already has an established convention.
 
 When it does not exist, create it from:
 
@@ -103,7 +105,7 @@ After the user confirms, move into autonomous execution mode. Do not keep asking
 
 ### 3. Initialize the persistent state
 
-Create or update `.codex/agile/current-iteration.md` immediately after confirmation.
+Create or update `current-iteration.md` in the repository root immediately after confirmation.
 
 This file is the single source of truth across `/clear`, new threads, and context compression. Keep it current after every meaningful slice.
 
@@ -231,7 +233,7 @@ Prefer slices that can be completed and recorded independently. A slice can be:
 
 ### 8. Versioning rules
 
-Maintain both versions in `.codex/agile/current-iteration.md`.
+Maintain both versions in `current-iteration.md`.
 
 - `product_version`
   Use semantic intent:
@@ -252,7 +254,7 @@ Do not fake 100 percent if validation is missing or known risks remain.
 
 ### 9. Update cadence
 
-Update `.codex/agile/current-iteration.md` when any of these happen:
+Update `current-iteration.md` when any of these happen:
 
 - the request is confirmed
 - a slice starts
@@ -270,9 +272,9 @@ Do not forward long subagent outputs verbatim into later delegations. First comp
 
 The agent cannot execute `/clear` itself, but it must actively prepare for it.
 
-After each completed requirement or major detail, write a precise resume prompt into `.codex/agile/current-iteration.md` and tell the user they can reset context with a message like:
+After each completed requirement or major detail, write a precise resume prompt into `current-iteration.md` and tell the user they can reset context with a message like:
 
-`Read .codex/agile/current-iteration.md and continue with $agile-multi-agent-delivery from the Next Resume Prompt section.`
+`Read current-iteration.md and continue with $agile-multi-agent-delivery from the Next Resume Prompt section.`
 
 When the thread becomes long, prefer a reset after the state file is fully updated.
 
@@ -321,4 +323,4 @@ This skill should feel like a strong delivery lead:
 
 When resuming after `/clear` or in a new thread, instruct the next agent to start with:
 
-`Read .codex/agile/current-iteration.md and continue with $agile-multi-agent-delivery.`
+`Read current-iteration.md and continue with $agile-multi-agent-delivery.`

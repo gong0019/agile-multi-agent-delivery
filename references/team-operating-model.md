@@ -197,7 +197,7 @@ Avoid these slice boundaries:
 
 To survive `/clear` or a fresh thread:
 
-1. update the repository-local iteration state file, typically `.codex/agile/current-iteration.md`
+1. update the repository-local iteration state file, typically `current-iteration.md` in the repository root
 2. include exact remaining work
 3. include the next resume prompt
 4. include changed files and verification status

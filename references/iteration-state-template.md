@@ -1,6 +1,6 @@
 # Current Iteration State
 
-Use this as the initial structure for the repository-local iteration state file, typically `.codex/agile/current-iteration.md`.
+Use this as the initial structure for the repository-local iteration state file, typically `current-iteration.md` in the repository root.
 
 Replace placeholders immediately. Keep the file concise but current.
 
@@ -95,4 +95,4 @@ Status values:
 
 ## Next Resume Prompt
 
-`Read .codex/agile/current-iteration.md and continue with $agile-multi-agent-delivery. Start from Slice [ID], respect the Decisions and Risks sections, and finish the Next Steps items before expanding scope.`
+`Read current-iteration.md and continue with $agile-multi-agent-delivery. Start from Slice [ID], respect the Decisions and Risks sections, and finish the Next Steps items before expanding scope.`
