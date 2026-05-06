@@ -1,7 +1,8 @@
 ---
 name: agile-multi-agent-delivery
+version: "1.0.0"
 description: |
-  Run a software task like a disciplined multi-agent agile team. Use this skill when the user wants Codex to act like a real development team with requirement analysis, technical design, parallel agent delegation, implementation, verification, and a persistent iteration state file that survives `/clear` or a fresh thread. This skill should convert a request into a confirmed delivery brief, create or update a repository-local state file such as `current-iteration.md`, delegate bounded parallel work to subagents, keep the main agent on the critical path, and maintain version, requirement detail, completion, risks, and next-step continuity.
+  Run a software task like a disciplined multi-agent agile team. Use this skill when you want an AI coding agent to act like a real development team with requirement analysis, technical design, parallel agent delegation, implementation, verification, and a persistent iteration state file that survives context resets or a fresh thread. This skill should convert a request into a confirmed delivery brief, create or update a repository-local state file such as `current-iteration.md`, delegate bounded parallel work to subagents, keep the main agent on the critical path, and maintain version, requirement detail, completion, risks, and next-step continuity.
 ---
 
 # Agile Multi Agent Delivery
@@ -308,6 +309,32 @@ A request is complete only when all of these are true:
 3. verification status is recorded honestly
 4. residual risks are surfaced
 5. the next resume prompt is ready for the next iteration
+
+## 13. Error Handling
+
+When problems occur, follow the procedures in `references/error-recovery.md`. Key scenarios:
+
+- **User rejects the brief**: Record the reason, ask targeted clarifying questions, rewrite and re-present. Do not bump iteration version for brief revisions.
+- **State file corruption**: Recover from git history or re-initialize from template. Bump iteration version and record the recovery decision.
+- **Sub-agent returns incomplete work**: Integrate valid portions, mark slice as `in_progress`, and either complete locally (critical path) or defer (non-critical).
+- **Concurrent iteration conflict**: Merge updates from other sessions, bump iteration version, and ask the user to resolve incompatible scope changes.
+- **Context loss after reset**: The `next_resume_prompt` in the state file frontmatter is the exact instruction to continue. If missing, construct one from the slice board.
+
+## 14. State Validation
+
+The state file must include a YAML frontmatter that passes validation by `scripts/validate-state.sh`. Run validation:
+
+- Before delegating new work
+- After completing a slice
+- Before declaring an iteration complete
+- When resuming from a context reset
+
+The schema is defined in `schema/state-file.json`. Required frontmatter fields:
+`skill_version`, `product_version`, `iteration_version`, `overall_completion`,
+`current_slice_completion`, `last_updated`, `active_objective`, `acceptance_criteria`,
+`slice_board`, `next_resume_prompt`.
+
+Stable IDs must follow the pattern: `AC-N`, `DEC-N`, `SL-N`, `RISK-N`, `TASK-N`.
 
 ## Operating stance
 

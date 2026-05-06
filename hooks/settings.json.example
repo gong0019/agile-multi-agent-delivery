@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "preCommit": [
+      {
+        "matcher": "current-iteration\\.md",
+        "hook": "bash ./scripts/validate-state.sh current-iteration.md"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "current-iteration\\.md",
+        "hook": "echo '[hook] state file was modified — consider running validate-state.sh to confirm integrity'"
+      }
+    ]
+  }
+}

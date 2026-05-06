@@ -5,3 +5,35 @@ interface:
 
 policy:
   allow_implicit_invocation: true
+
+agent:
+  model_recommendation: "sonnet"
+  output_format:
+    style: "structured"
+    requirements:
+      - "Report changed files at the end of every task"
+      - "Report notable risks discovered"
+      - "Do not include raw subagent outputs in responses — compress into structured facts"
+      - "Reference stable IDs (AC-N, DEC-N, SL-N, RISK-N) when discussing decisions or criteria"
+  constraints:
+    allowed_tools:
+      - "Bash"
+      - "Read"
+      - "Write"
+      - "Edit"
+      - "Agent"
+      - "Glob"
+      - "Grep"
+    avoided_operations:
+      - "git reset --hard"
+      - "git push --force"
+      - "rm -rf"
+      - "Database mutations"
+      - "Production configuration changes"
+  critical_paths:
+    - "Authentication and authorization flows"
+    - "Routing, navigation, and app-entry control flow"
+    - "Shared API or RPC request/response contracts"
+    - "Date, time zone, locale, currency, or region-sensitive business logic"
+    - "Schema migrations and cross-service data compatibility"
+    - "Tests or scripts that create, mutate, or delete real data"

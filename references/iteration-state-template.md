@@ -1,8 +1,30 @@
+---
+skill_version: "1.0.0"
+product_version: "v0.1.0"
+iteration_version: "iter-20260506-01"
+overall_completion: "0%"
+current_slice_completion: "0%"
+last_updated: "2026-05-06T00:00:00Z"
+active_objective: "Replace this with a one paragraph summary of the current goal."
+acceptance_criteria:
+  - id: "AC-1"
+    criterion: "Replace with first acceptance criterion"
+    status: "pending"
+slice_board:
+  - id: "SL-01"
+    summary: "Replace with brief outcome description"
+    owner: "delivery-lead"
+    status: "todo"
+    files: []
+    verification: "Replace with planned verification steps"
+decisions: []
+risks: []
+next_resume_prompt: "Read current-iteration.md and continue with $agile-multi-agent-delivery. Start from Slice SL-01, respect the Decisions and Risks sections, and finish the Next Steps items before expanding scope."
+---
+
 # Current Iteration State
 
-Use this as the initial structure for the repository-local iteration state file, typically `current-iteration.md` in the repository root.
-
-Replace placeholders immediately. Keep the file concise but current.
+This file is the single source of truth for the current iteration. The YAML frontmatter above is machine-validated. The Markdown body below provides human-readable detail.
 
 ## Project Snapshot
 
@@ -32,8 +54,6 @@ Replace placeholders immediately. Keep the file concise but current.
 ## Confirmed Acceptance Criteria
 
 1. `AC-1 [criterion]`
-2. `AC-2 [criterion]`
-3. `AC-3 [criterion]`
 
 ## Key Repo Constraints
 
