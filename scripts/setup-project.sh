@@ -32,7 +32,10 @@ SNIPPET_EOF
 if [[ $# -gt 0 ]]; then
   CONFIG_FILE="$1"
 else
-  if [[ -f "${PROJECT_ROOT}/CLAUDE.md" ]]; then
+  # If skill lives under .codex/, treat AGENTS.md as the primary target
+  if [[ "$SKILL_ROOT" == *"/.codex/"* ]]; then
+    CONFIG_FILE="${PROJECT_ROOT}/AGENTS.md"
+  elif [[ -f "${PROJECT_ROOT}/CLAUDE.md" ]]; then
     CONFIG_FILE="${PROJECT_ROOT}/CLAUDE.md"
   elif [[ -f "${PROJECT_ROOT}/AGENTS.md" ]]; then
     CONFIG_FILE="${PROJECT_ROOT}/AGENTS.md"
