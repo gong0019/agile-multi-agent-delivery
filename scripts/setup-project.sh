@@ -7,19 +7,23 @@
 
 set -euo pipefail
 
+SKILL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT_ROOT="${PWD}"
 
-read -r -d '' SNIPPET << 'SNIPPET_EOF' || true
+# Compute skill path relative to project root (works regardless of where skill is placed)
+SKILL_REL="${SKILL_ROOT#${PROJECT_ROOT}/}"
+
+read -r -d '' SNIPPET << SNIPPET_EOF || true
 ## Agile Delivery Skill
 
-This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
+This project includes \`${SKILL_REL}/\` — a structured multi-agent delivery skill.
 
 Activate it **only** when the user explicitly requests it, for example:
 - "用 agile-multi-agent-delivery 来做这个需求"
-- "use $agile-multi-agent-delivery"
+- "use \$agile-multi-agent-delivery"
 
-When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
-Orchestrator, never write source code directly, all delivery files under `.agile/`.
+When activated: read \`${SKILL_REL}/SKILL.md\` in full, act as the
+Orchestrator, never write source code directly, all delivery files under \`.agile/\`.
 
 Do not activate for normal coding questions, bug fixes, or explanations.
 SNIPPET_EOF
