@@ -250,8 +250,8 @@ Add to `CLAUDE.md` in your project root (Cursor: `.cursor/rules/`, Windsurf: `.w
 This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
 
 Activate it **only** when the user explicitly requests it, for example:
-- "use $agile-multi-agent-delivery for this"
-- "start an agile iteration for..."
+- "用 agile-multi-agent-delivery 来做这个需求"
+- "use $agile-multi-agent-delivery"
 
 When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
 Orchestrator, never write source code directly, all delivery files under `.agile/`.
