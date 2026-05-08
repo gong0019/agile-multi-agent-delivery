@@ -25,49 +25,41 @@ cp -r /path/to/agile-multi-agent-delivery /your-project/
 git submodule add <skill-repo-url> agile-multi-agent-delivery
 ```
 
-**第三步：打开 AI 工具，粘贴 bootstrap prompt，然后描述需求**
+**第三步：在项目配置文件里声明 skill**（一次性，之后无需任何额外操作）
 
-```
-You are the Orchestrator for this project's software delivery workflow.
-Your full protocol is defined in SKILL.md — read it before acting.
+在项目根目录的 `CLAUDE.md` 中加入（Cursor 用 `.cursor/rules/`，Windsurf 用 `.windsurfrules`）：
 
-Hard rules you must never break:
-- You NEVER write, edit, or propose source code directly
-- You NEVER read large source files on your own initiative
-- You NEVER skip the user confirmation gate
-- All implementation goes through agents you spawn with Task Contracts
-- All delivery files live under .agile/ — never create files in the project root
+```markdown
+## Agile Delivery Skill
 
-State management:
-- Find the active state file: scripts/current-state.sh
-- Start a new iteration: scripts/init-state.sh
-- List iteration history: scripts/list-iterations.sh
+This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
 
-When you receive a feature request:
-1. Read SKILL.md in full
-2. Run scripts/current-state.sh — if it fails, run scripts/init-state.sh first
-3. Read only the minimum repo context needed to understand the request
-4. Write a delivery brief: target, value, in-scope, out-of-scope, constraints, risks
-5. Present the brief to the user and wait for confirmation
-6. After confirmation: update state file, then spawn ProductOwner and Challenger in parallel
+Activate it **only** when the user explicitly requests it, for example:
+- "用 agile-multi-agent-delivery 来做这个需求"
+- "use $agile-multi-agent-delivery"
 
-Do not spawn any agents or touch any files before the user confirms the brief.
+When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
+Orchestrator, never write source code directly, all delivery files under `.agile/`.
+
+Do not activate for normal coding questions, bug fixes, or explanations.
 ```
 
-> 继续上次进度、接入 Cursor / Windsurf / CLAUDE.md 的方式见 [BOOTSTRAP.md](BOOTSTRAP.md)。
+> 三种工具的完整写法见 [BOOTSTRAP.md](BOOTSTRAP.md)。
 
 ---
 
 ## 你需要做什么
 
-用户只需做两件事，其余全部由 AI 自动完成：
+配置好之后，想用 agile 流程时直接说，其余全部由 AI 自动完成：
 
 | 你做 | AI 自动做 |
 | --- | --- |
-| 粘贴 bootstrap prompt | 读取 SKILL.md，初始化 `.agile/` 状态目录 |
-| 用自然语言描述需求 | 起草交付简报，等待你确认 |
+| 说"用 agile-multi-agent-delivery 来做这个需求：[需求描述]" | 读取 SKILL.md，初始化 `.agile/` 状态目录 |
+| （等待）| 起草交付简报，等待你确认 |
 | **确认 PRD**（唯一需要回复的节点）| 拆分任务、并行开发、集成检查、并行测试 |
 | （等待完成）| 维护状态文件，输出交付总结 |
+
+普通的问题、bug 修复、代码解释——直接问就好，不会触发 agile 流程。
 
 ---
 
@@ -260,36 +252,26 @@ cp -r /path/to/agile-multi-agent-delivery /your-project/
 git submodule add <skill-repo-url> agile-multi-agent-delivery
 ```
 
-**Step 3: Open your AI tool, paste the bootstrap prompt, then describe your request**
+**Step 3: Declare the skill in your project config** (once — no action needed afterwards)
 
-```
-You are the Orchestrator for this project's software delivery workflow.
-Your full protocol is defined in SKILL.md — read it before acting.
+Add to `CLAUDE.md` in your project root (Cursor: `.cursor/rules/`, Windsurf: `.windsurfrules`):
 
-Hard rules you must never break:
-- You NEVER write, edit, or propose source code directly
-- You NEVER read large source files on your own initiative
-- You NEVER skip the user confirmation gate
-- All implementation goes through agents you spawn with Task Contracts
-- All delivery files live under .agile/ — never create files in the project root
+```markdown
+## Agile Delivery Skill
 
-State management:
-- Find the active state file: scripts/current-state.sh
-- Start a new iteration: scripts/init-state.sh
-- List iteration history: scripts/list-iterations.sh
+This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
 
-When you receive a feature request:
-1. Read SKILL.md in full
-2. Run scripts/current-state.sh — if it fails, run scripts/init-state.sh first
-3. Read only the minimum repo context needed to understand the request
-4. Write a delivery brief: target, value, in-scope, out-of-scope, constraints, risks
-5. Present the brief to the user and wait for confirmation
-6. After confirmation: update state file, then spawn ProductOwner and Challenger in parallel
+Activate it **only** when the user explicitly requests it, for example:
+- "use $agile-multi-agent-delivery for this"
+- "start an agile iteration for..."
 
-Do not spawn any agents or touch any files before the user confirms the brief.
+When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
+Orchestrator, never write source code directly, all delivery files under `.agile/`.
+
+Do not activate for normal coding questions, bug fixes, or explanations.
 ```
 
-> For resume, Cursor, Windsurf, and CLAUDE.md integration: see [BOOTSTRAP.md](BOOTSTRAP.md).
+> Full config for Cursor, Windsurf, and manual activation: see [BOOTSTRAP.md](BOOTSTRAP.md).
 
 ---
 
@@ -297,10 +279,12 @@ Do not spawn any agents or touch any files before the user confirms the brief.
 
 | You do | AI does automatically |
 | --- | --- |
-| Paste the bootstrap prompt | Read SKILL.md, initialize `.agile/` directory |
-| Describe your request in plain language | Draft a delivery brief, wait for your approval |
+| Say "use $agile-multi-agent-delivery for: [your request]" | Read SKILL.md, initialize `.agile/` directory |
+| (wait) | Draft a delivery brief, wait for your approval |
 | **Confirm the PRD** (the only reply needed) | Decompose, build in parallel, integrate, test |
 | (wait) | Maintain state file, deliver summary |
+
+Normal questions, bug fixes, and code explanations work as usual — the agile pipeline is not triggered.
 
 ---
 
