@@ -74,24 +74,28 @@ Constraints:
 
 ### ProjectManager (explorer, PM_DECOMPOSITION)
 
-Deliverables: ownership map + Builder Task Contracts + Tester count.
+Deliverables: ownership map + Builder Task Contracts + Tester count + Contract Specs for all Cross-Slice Interfaces.
 
 Responsibilities:
 - Read the confirmed PRD and repository file tree
 - Apply the granularity rules from `references/pm-decomposition-guide.md`
 - Produce a decomposition plan with strictly disjoint file ownership
-- Self-validate: no file in two slices
+- Identify every Cross-Slice Interface using heuristics from `references/csi-guide.md`
+- Produce a precise Contract Spec for every CSI (provider and consumers must agree on the same spec)
+- Self-validate: no file in two slices, every contract has a provider and at least one consumer, every Builder's contracts reference existing specs
 
 Constraints:
 - Never writes source code
 - Does not make product decisions — escalates to Orchestrator
+- Does not skip CSI identification even if the PRD is silent on interfaces — propose defaults and escalate
 
 ### Builder-N (worker, BUILDING, spawned in parallel)
 
-Deliverables: implemented slice + Agent Return with changed files, verification notes, risks.
+Deliverables: implemented slice + Agent Return with changed files, verification notes, risks, and Contract Compliance table.
 
 Responsibilities:
 - Read and implement only files in `files_allowed`
+- Adhere to every Contract Spec referenced in the Task Contract's `contracts` field
 - Report every changed file in the Agent Return
 - Run the strongest available verification (type check, unit tests, lint)
 - Escalate immediately if any required change is outside `files_allowed`
@@ -100,14 +104,16 @@ Constraints:
 - Never touches files outside `files_allowed`
 - Never reverts changes made by other Builders
 - If a shared file needs a change the Builder does not own: describe in `Needs Orchestrator Decision`, do not modify the file
+- Must report Contract Compliance per contract in Agent Return (status: `compliant / partial / blocked` with evidence)
 
 ### Tester-N (worker, TESTING, spawned in parallel)
 
-Deliverables: test results + coverage gap report + pass/fail per acceptance criterion.
+Deliverables: test results + coverage gap report + pass/fail per acceptance criterion + contract verification results.
 
 Responsibilities:
 - Cover the assigned Builders' slices
 - Run unit, integration, or E2E tests as available
+- Verify cross-slice contracts: actual requests against api-* specs, type checker for shared-type, schema introspection for db-schema, event payload validation for event contracts
 - Report AC-N status (met / failed / untestable)
 - Identify coverage gaps and surface as RISK-N items
 
@@ -159,6 +165,10 @@ Every subagent returns an `Agent Return`:
 - Key Findings or Changes:
 - Risks:
 - Validation Performed:
+- Contract Compliance:
+  | Contract ID | Status | Evidence |
+  |-------------|--------|----------|
+  | C-1         | compliant | [brief evidence] |
 - Needs Orchestrator Decision:
 ```
 

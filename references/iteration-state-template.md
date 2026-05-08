@@ -72,6 +72,12 @@ This file is the single source of truth for the current iteration. The YAML fron
 
 - `WS-1 [summary]`
 
+## Contract Board
+
+| Contract ID | Type | Provider | Consumers | Spec Summary | Status |
+| --- | --- | --- | --- | --- | --- |
+| C-1 | `[api-rest / shared-type / db-schema / event / behavioral / operational]` | `SL-XX` | `SL-YY` | `[one-line]` | `specified / drift / resolved` |
+
 ## Slice Board
 
 | Slice ID | Slice | Owner | Status | Files | Verification |

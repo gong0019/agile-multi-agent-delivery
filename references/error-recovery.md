@@ -140,3 +140,70 @@ This document defines how the agile multi-agent delivery skill handles common fa
    - If not conflicting: accept the change, record `DEC-N: retroactive-scope-expansion - [rationale]`, update the ownership map.
    - If conflicting: revert the forbidden change (or create an Integrator slice to resolve it) and rerun the original Builder with a corrected Task Contract that includes an explicit `Must Respect: do not modify [file]` clause.
 4. Do not re-spawn the same Builder without updating its `Must Respect` list.
+
+---
+
+## 10. Contract Mismatch (Cross-Slice Interface Drift)
+
+**Trigger:** Integration check reveals that provider and consumer Builders report conflicting Contract Compliance for the same contract (e.g., provider says C-1 is compliant, consumer says C-1 is partial/blocked).
+
+**Recovery:**
+
+1. Record `RISK-N: contract-drift-C-[N] - [provider] reports compliant, [consumer] reports [status]: [reason]`.
+2. Do NOT proceed to TESTING. Contract drift means the provider and consumer have incompatible implementations.
+3. Determine which side is correct:
+   - If the provider implemented to the contract spec and the consumer did not: the consumer's slice is `blocked`. Create a targeted follow-up slice for the consumer that references the contract spec explicitly in `must_respect`.
+   - If the consumer implemented to the contract spec and the provider did not: the provider's slice is `blocked`. Same recovery as above but for the provider.
+   - If the contract spec itself was ambiguous: record `DEC-N: contract-clarified-C-[N] - [clarification]`. Update the contract spec. Both provider and consumer may need follow-up slices.
+4. If the drift affects other slices (e.g., a shared type used by 3 slices), assess whether all consumers need correction.
+5. After correction, re-run Integration Check with contract compliance cross-check.
+
+---
+
+## 10-b. Builder Escalates Contract Issue Mid-Build
+
+**Trigger:** During BUILDING, a Builder discovers that a Contract Spec is wrong, incomplete, or impossible to implement as specified. The Builder marks the contract as `partial` or `blocked` in their Agent Return and describes the issue under `Needs Orchestrator Decision`.
+
+This is not a bug — it is expected behavior in brownfield projects where PM can only read interface-layer code, not implementation logic. The probability is non-trivial: hidden constraints in service-layer code, undocumented side effects, or library version incompatibilities may only surface when a Builder actually writes code.
+
+**Why this can't be fixed mid-build:** All Builders run in parallel. The Orchestrator cannot "pause" Builder B while Builder A's contract issue is resolved. The feedback loop is therefore **post-hoc**: collect all Builder returns, then amend the contract and create correction slices.
+
+**Recovery:**
+
+1. The Orchestrator collects all Builder Agent Returns. Note which contracts have `partial` or `blocked` status and the specific reasons.
+2. For each affected contract, assess severity:
+   - **Contract is implementable but imprecise** (e.g., missing an edge case response code): The Builder that discovered the issue likely handled it. Record `DEC-N: contract-clarified-C-[N] - [detail]`. Update the Contract Spec for future reference. No correction slice needed if both provider and consumer handled it consistently.
+   - **Contract is wrong** (e.g., field type is `string` but must be `number` for the library to work): The contract must be amended. Spawn PM with the amendment request (not the full decomposition — just the one contract). PM returns the amended Contract Spec. Create a correction slice for the provider and all consumers of that contract. Mark the original slices as `partial`.
+   - **Contract is impossible** (e.g., the API framework doesn't support the specified pattern): Escalate to user. Record `RISK-N: contract-blocked-C-[N] - [reason]`. The Orchestrator proposes an alternative approach based on the Builder's findings.
+3. After all contract amendments are resolved, re-run the Integration Check with contract compliance cross-check on the amended contracts.
+4. Record all contract amendments in the state file's `Decisions` section with rationale.
+5. Update the Contract Board in the state file: changed contracts get a new row status `amended`.
+
+**Prevention:** The more thoroughly PM executes Step 8 (Read existing interface patterns), the lower the probability of mid-build contract escalations. In greenfield projects, this probability is near zero. In brownfield projects with deep service-layer logic, it is moderate.
+
+---
+
+## 11. Missing Contract Spec
+
+**Trigger:** A Builder's Task Contract references a Contract ID that has no corresponding Contract Spec in the PM Decomposition Plan, or a CSI was identified in the ownership map but no contract was produced.
+
+**Recovery:**
+
+1. Do NOT spawn Builder agents.
+2. Return the decomposition plan to the ProjectManager with the specific missing contract IDs.
+3. The ProjectManager produces the missing Contract Spec(s) and updates affected Task Contracts.
+4. Re-validate before spawning Builders.
+
+---
+
+## 12. Tester Detects Contract Violation
+
+**Trigger:** A Tester's contract verification (actual API requests, type checks, schema introspection) reveals that the implementation does not match the contract spec, even though the Builder reported `compliant`.
+
+**Recovery:**
+
+1. Record `RISK-N: contract-violation-C-[N] - [Tester] detected [violation]: [evidence]`.
+2. Mark the contract status in the Contract Board as `drift`.
+3. The violating slice is `blocked`. The fix is a new iteration slice, not part of the current Tester's scope.
+4. If the violation is in the provider's implementation: the provider slice must be corrected. All consumers should be checked for cascading impact.
+5. Do not lower the bar — if a Builder incorrectly reported `compliant`, the contract must be re-verified after the fix.

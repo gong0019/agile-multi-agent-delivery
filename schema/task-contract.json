@@ -101,6 +101,27 @@
       },
       "description": "Contracts, constraints, or rules the subagent must honor"
     },
+    "contracts": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["contract_id", "role"],
+        "properties": {
+          "contract_id": {
+            "type": "string",
+            "pattern": "^C-[0-9]+$",
+            "description": "Reference to a Contract Spec produced during PM decomposition"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["provider", "consumer"],
+            "description": "Whether this Builder provides or consumes the interface"
+          }
+        }
+      },
+      "description": "Cross-Slice Interface contracts this Builder must comply with. Each references a Contract Spec defined in the PM Decomposition Plan. May be empty only if this slice has zero cross-slice interfaces."
+    },
     "expected_deliverable": {
       "type": "string",
       "minLength": 1,
@@ -115,6 +136,48 @@
       "type": "string",
       "minLength": 1,
       "description": "Decision point or blocker that requires Orchestrator intervention"
+    },
+    "design_constraints": {
+      "type": "object",
+      "description": "Frontend design constraints. Required when files_allowed includes UI files (pages, components, views, templates, stylesheets).",
+      "properties": {
+        "css_framework": {
+          "type": "string",
+          "description": "e.g. 'Tailwind CSS v3', 'CSS Modules', 'styled-components'"
+        },
+        "component_library": {
+          "type": "string",
+          "description": "e.g. 'shadcn/ui', 'Ant Design 5', 'Material UI', 'none'"
+        },
+        "icon_library": {
+          "type": "string",
+          "description": "e.g. 'lucide-react', 'heroicons', '@ant-design/icons'"
+        },
+        "reference_pages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "2-3 file paths to existing pages that exemplify the desired visual style"
+        },
+        "layout_pattern": {
+          "type": "string",
+          "description": "e.g. 'sidebar+content', 'full-width card grid', 'centered form'"
+        },
+        "design_tokens": {
+          "type": "object",
+          "description": "Key visual tokens extracted from existing code",
+          "properties": {
+            "primary_color": { "type": "string" },
+            "border_radius": { "type": "string" },
+            "spacing_scale": { "type": "string" },
+            "font_family": { "type": "string" }
+          }
+        },
+        "must_not": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "e.g. 'use inline styles', 'introduce new CSS frameworks', 'use emoji as icons'"
+        }
+      }
     }
   }
 }

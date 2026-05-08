@@ -34,8 +34,10 @@ INIT
  └→ REQUIREMENTS_REVIEW      Orchestrator mediates divergence → user confirms
  └→ REQUIREMENTS_CONFIRMED   PRD locked
  └→ PM_DECOMPOSITION         ProjectManager decomposes PRD into bounded slices
+                              ↳ identifies Cross-Slice Interfaces (CSIs)
+                              ↳ produces Contract Specs for every CSI
  └→ BUILDING                 N Builder agents (parallel, disjoint file ownership)
- └→ INTEGRATION_CHECK        Orchestrator validates all Builder returns
+ └→ INTEGRATION_CHECK        Orchestrator validates all Builder returns + Contract Compliance
  └→ TESTING                  M Tester agents (parallel)
  └→ COMPLETE
 ```
@@ -163,17 +165,22 @@ Spawn one ProjectManager agent. Provide:
 - the confirmed PRD path
 - a compact summary of the repository structure (file tree, not file contents)
 - a reference to `references/pm-decomposition-guide.md`
+- a reference to `references/csi-guide.md`
 
 The ProjectManager must return:
 
+- an Interface Conventions Summary (brownfield only — extracted from existing interface-layer code per Step 8 of pm-decomposition-guide.md)
 - an ownership map (strict disjoint sets: `{SL-N: [file1, file2]}`)
-- one Task Contract per Builder
+- one Contract Spec per Cross-Slice Interface per `references/csi-guide.md`
+- one Task Contract per Builder (each listing its bound Contract IDs, design constraints for frontend slices)
 - `builder_count` and `tester_count`
 
-Before spawning Builder agents, the Orchestrator validates the ownership map:
+Before spawning Builder agents, the Orchestrator validates:
 
 - run `scripts/check-constraints.sh` which checks Constraint 7 (no two slices share a file in BUILDING phase)
-- if conflicts found: return the plan to the ProjectManager for re-decomposition
+- verify every Contract ID referenced in a Task Contract has a corresponding Contract Spec
+- verify every CSI has both a provider and at least one consumer bound to it
+- if conflicts or missing contracts found: return the plan to the ProjectManager for re-decomposition
 
 Update state file: `phase: BUILDING`, `builder_count: N`, `tester_count: M`.
 
@@ -200,12 +207,15 @@ Builder Task Contract requirements:
 - `parallel_group`: same tag for this batch
 - `files_allowed`: exact owned files
 - `files_avoid`: all files owned by other Builders
-- `must_respect`: API contracts, migration constraints, coding standards
-- `expected_deliverable`: Agent Return with changed files, verification, risks
+- `contracts`: list of Contract IDs this Builder must comply with
+- `must_respect`: API contracts (by Contract ID), migration constraints, coding standards
+- `expected_deliverable`: Agent Return with changed files, verification, risks, Contract Compliance table
 - `stop_when`: all owned files implemented and verified
 - `escalate_if`: any required change is outside `files_allowed`
 
 While Builders run, the Orchestrator updates the state file phase log and prepares the integration check criteria. Do not wait idly.
+
+**Contract amendment during build**: Builders cannot communicate with each other mid-build. If a Builder discovers a contract issue, it marks the contract as `partial` or `blocked` in the Agent Return and describes the problem under `Needs Orchestrator Decision`. The Orchestrator resolves all contract escalations during Integration Check — see `references/error-recovery.md` Section 10-b for the full amendment loop.
 
 ### 7. Integration Check Gate
 
@@ -214,10 +224,11 @@ After all Builders return, the Orchestrator performs a structured check — base
 1. Check `files_changed` across all returns for unexpected overlap.
 2. Check for any `RISK` items with severity `high` or `critical`.
 3. Check that all slices report a `Validation Performed` entry.
+4. Check Contract Compliance: every Builder bound to a contract must report compliance status. Cross-check provider and consumer reports for the same contract — if they disagree, flag as `RISK-N: contract-drift`.
 
 **If check passes**: update state file to `phase: TESTING`, spawn Tester agents.
 
-**If check fails**: create one Integrator agent with a narrowly scoped Task Contract targeting only the conflict or critical risk. After Integrator completes, re-run the check.
+**If check fails**: create one Integrator agent with a narrowly scoped Task Contract targeting only the conflict, critical risk, or contract drift. After Integrator completes, re-run the check.
 
 ### 8. Parallel Testing
 
@@ -234,20 +245,38 @@ Tester Task Contract requirements:
 
 Bugs found by Testers are recorded as `RISK-N` items. Fixing them is a new iteration slice, not part of the current Tester's scope.
 
-### 9. Shared-Contract Risk Areas
+### 9. Cross-Slice Interface (CSI) Contract System
 
-Elevate these to main-agent integration responsibility unless the task is extremely narrow:
+Parallel Builders with disjoint file ownership create a risk: any interface between slices is independently interpreted by each Builder. The CSI Contract System eliminates this risk by producing precise, shared specifications before any code is written.
 
-- authentication and authorization flows
-- routing, navigation, or app-entry control flow
-- shared API or RPC request and response contracts
-- date, time zone, locale, currency, or region-sensitive business logic
-- schema migrations and cross-service data compatibility
-- tests or scripts that create, mutate, or delete real data
+#### CSI Types
 
-Subagents may inspect or propose changes in these areas, but the Orchestrator makes the final integration decision.
+| Type | When |
+|------|------|
+| `api-rest`, `api-rpc`, `api-graphql` | Any endpoint crossing slice boundaries (frontend↔backend, service↔service) |
+| `shared-type` | Any type/interface/enum/model consumed by multiple slices |
+| `db-schema` | Any table/collection/index created by one slice and queried by another |
+| `event` | Any event/message published by one slice and consumed by another |
+| `behavioral` | Auth flows, routing, state transitions that span slices |
+| `operational` | Config keys, env vars, feature flags shared across slices |
 
-Record known critical files or business invariants under `Key Repo Constraints` in the state file.
+Full identification heuristics and Contract Spec templates: `references/csi-guide.md`.
+
+#### Contract Lifecycle
+
+1. **PM identifies CSIs** during decomposition (Step 8 of `references/pm-decomposition-guide.md`)
+2. **PM produces a Contract Spec** for every CSI (Step 9) — precise enough that two Builders who only read the contract produce compatible code
+3. **Task Contracts bind Builders to contracts** — `must_respect` references Contract IDs
+4. **Builders report Contract Compliance** in Agent Returns — `compliant / partial / blocked` per contract
+5. **Orchestrator validates contracts** during Integration Check — cross-checks provider vs consumer reports
+6. **Testers verify contracts** in TESTING phase — actual requests, type checks, schema introspection
+
+#### Orchestrator Responsibility
+
+The Orchestrator does not read source code to verify contracts. Instead:
+- Confirms every contract has compliance reports from all bound Builders before TESTING
+- Flags contract drift (provider says compliant, consumer says partial) as `RISK-N: contract-drift`
+- Testers perform the code-level contract verification
 
 ### 10. Versioning Rules
 
