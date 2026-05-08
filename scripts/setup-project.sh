@@ -34,6 +34,8 @@ if [[ $# -gt 0 ]]; then
 else
   if [[ -f "${PROJECT_ROOT}/CLAUDE.md" ]]; then
     CONFIG_FILE="${PROJECT_ROOT}/CLAUDE.md"
+  elif [[ -f "${PROJECT_ROOT}/AGENTS.md" ]]; then
+    CONFIG_FILE="${PROJECT_ROOT}/AGENTS.md"
   elif [[ -d "${PROJECT_ROOT}/.cursor/rules" ]]; then
     CONFIG_FILE="${PROJECT_ROOT}/.cursor/rules/agile-delivery.md"
   elif [[ -f "${PROJECT_ROOT}/.windsurfrules" ]]; then
@@ -64,6 +66,7 @@ echo ""
 echo "Detected tool:"
 case "$CONFIG_FILE" in
   *CLAUDE.md)        echo "  Claude Code  →  ${CONFIG_FILE}" ;;
+  *AGENTS.md)        echo "  Codex        →  ${CONFIG_FILE}" ;;
   *.cursor/rules/*)  echo "  Cursor       →  ${CONFIG_FILE}" ;;
   *.windsurfrules)   echo "  Windsurf     →  ${CONFIG_FILE}" ;;
   *)                 echo "  Custom       →  ${CONFIG_FILE}" ;;

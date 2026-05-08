@@ -25,7 +25,7 @@ git submodule add <skill-repo-url> agile-multi-agent-delivery
 bash agile-multi-agent-delivery/scripts/setup-project.sh
 ```
 
-自动检测并写入 `CLAUDE.md`（Claude Code）、`.cursor/rules/agile-delivery.md`（Cursor）或 `.windsurfrules`（Windsurf）。已配置过则跳过，幂等安全。
+自动检测并写入 `CLAUDE.md`（Claude Code）、`AGENTS.md`（Codex）、`.cursor/rules/agile-delivery.md`（Cursor）或 `.windsurfrules`（Windsurf）。已配置过则跳过，幂等安全。
 
 > 需要指定文件或手动配置，见 [BOOTSTRAP.md](BOOTSTRAP.md)。
 
@@ -235,7 +235,7 @@ git submodule add <skill-repo-url> agile-multi-agent-delivery
 bash agile-multi-agent-delivery/scripts/setup-project.sh
 ```
 
-Auto-detects and writes to `CLAUDE.md` (Claude Code), `.cursor/rules/agile-delivery.md` (Cursor), or `.windsurfrules` (Windsurf). Idempotent — skips silently if already configured.
+Auto-detects and writes to `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex), `.cursor/rules/agile-delivery.md` (Cursor), or `.windsurfrules` (Windsurf). Idempotent — skips silently if already configured.
 
 > To specify a custom file or configure manually, see [BOOTSTRAP.md](BOOTSTRAP.md).
 
