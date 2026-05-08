@@ -19,26 +19,15 @@ cp -r /path/to/agile-multi-agent-delivery /your-project/
 git submodule add <skill-repo-url> agile-multi-agent-delivery
 ```
 
-**第三步：在项目配置文件里声明 skill**（一次性，之后无需任何额外操作）
+**第二步：声明 skill**（一次性，之后无需任何额外操作）
 
-在项目根目录的 `CLAUDE.md` 中加入（Cursor 用 `.cursor/rules/`，Windsurf 用 `.windsurfrules`）：
-
-```markdown
-## Agile Delivery Skill
-
-This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
-
-Activate it **only** when the user explicitly requests it, for example:
-- "用 agile-multi-agent-delivery 来做这个需求"
-- "use $agile-multi-agent-delivery"
-
-When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
-Orchestrator, never write source code directly, all delivery files under `.agile/`.
-
-Do not activate for normal coding questions, bug fixes, or explanations.
+```bash
+bash agile-multi-agent-delivery/scripts/setup-project.sh
 ```
 
-> 三种工具的完整写法见 [BOOTSTRAP.md](BOOTSTRAP.md)。
+自动检测并写入 `CLAUDE.md`（Claude Code）、`.cursor/rules/agile-delivery.md`（Cursor）或 `.windsurfrules`（Windsurf）。已配置过则跳过，幂等安全。
+
+> 需要指定文件或手动配置，见 [BOOTSTRAP.md](BOOTSTRAP.md)。
 
 ---
 
@@ -240,26 +229,15 @@ cp -r /path/to/agile-multi-agent-delivery /your-project/
 git submodule add <skill-repo-url> agile-multi-agent-delivery
 ```
 
-**Step 3: Declare the skill in your project config** (once — no action needed afterwards)
+**Step 2: Declare the skill** (once — no action needed afterwards)
 
-Add to `CLAUDE.md` in your project root (Cursor: `.cursor/rules/`, Windsurf: `.windsurfrules`):
-
-```markdown
-## Agile Delivery Skill
-
-This project includes `agile-multi-agent-delivery/` — a structured multi-agent delivery skill.
-
-Activate it **only** when the user explicitly requests it, for example:
-- "用 agile-multi-agent-delivery 来做这个需求"
-- "use $agile-multi-agent-delivery"
-
-When activated: read `agile-multi-agent-delivery/SKILL.md` in full, act as the
-Orchestrator, never write source code directly, all delivery files under `.agile/`.
-
-Do not activate for normal coding questions, bug fixes, or explanations.
+```bash
+bash agile-multi-agent-delivery/scripts/setup-project.sh
 ```
 
-> Full config for Cursor, Windsurf, and manual activation: see [BOOTSTRAP.md](BOOTSTRAP.md).
+Auto-detects and writes to `CLAUDE.md` (Claude Code), `.cursor/rules/agile-delivery.md` (Cursor), or `.windsurfrules` (Windsurf). Idempotent — skips silently if already configured.
+
+> To specify a custom file or configure manually, see [BOOTSTRAP.md](BOOTSTRAP.md).
 
 ---
 
