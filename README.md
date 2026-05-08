@@ -9,17 +9,7 @@
 
 ## 快速接入
 
-**第一步：把 skill 放进项目**
-
-```bash
-# 方式 A：直接复制
-cp -r /path/to/agile-multi-agent-delivery /your-project/
-
-# 方式 B：git submodule
-git submodule add <skill-repo-url> agile-multi-agent-delivery
-```
-
-**第二步：声明 skill**（一次性，之后无需任何额外操作）
+**声明 skill**（一次性，之后无需任何额外操作）
 
 ```bash
 bash agile-multi-agent-delivery/scripts/setup-project.sh
@@ -219,17 +209,7 @@ The main agent (**Orchestrator**) never writes code — it only orchestrates. Al
 
 ### Setup
 
-**Step 1: Add the skill to your project**
-
-```bash
-# Option A: copy
-cp -r /path/to/agile-multi-agent-delivery /your-project/
-
-# Option B: git submodule
-git submodule add <skill-repo-url> agile-multi-agent-delivery
-```
-
-**Step 2: Declare the skill** (once — no action needed afterwards)
+**Declare the skill** (once — no action needed afterwards)
 
 ```bash
 bash agile-multi-agent-delivery/scripts/setup-project.sh
