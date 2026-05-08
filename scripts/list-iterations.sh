@@ -16,8 +16,11 @@ if [[ ! -d "$AGILE_DIR" ]]; then
 fi
 
 python3 -c "import yaml" 2>/dev/null || {
-  echo "FAIL: PyYAML required. Run: pip3 install pyyaml"
-  exit 2
+  echo "INFO: PyYAML not found — installing automatically..."
+  pip3 install --quiet pyyaml || {
+    echo "FAIL: Could not install PyYAML. Run manually: pip3 install pyyaml"
+    exit 2
+  }
 }
 
 CURRENT=""

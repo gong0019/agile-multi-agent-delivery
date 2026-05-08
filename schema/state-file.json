@@ -11,6 +11,7 @@
     "overall_completion",
     "current_slice_completion",
     "last_updated",
+    "prd_path",
     "active_objective",
     "acceptance_criteria",
     "slice_board",
@@ -44,7 +45,7 @@
     },
     "iteration_version": {
       "type": "string",
-      "pattern": "^iter-[0-9]{8}-[0-9]+$",
+      "pattern": "^iter-[0-9]{8}-[0-9]{2,}$",
       "description": "Resumable sequence identifier, e.g. iter-20260506-01"
     },
     "overall_completion": {

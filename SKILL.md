@@ -110,7 +110,7 @@ Do not ask a long list of questions. Infer aggressively. Ask only for details th
 
 After forming an initial understanding, spawn ProductOwner and Challenger in the same turn:
 
-- **ProductOwner**: Write `docs/prd-{iter}.md` using `references/prd-template.md`. Include user stories, functional requirements (with AC-N IDs), non-functional requirements, out-of-scope items, and open questions.
+- **ProductOwner**: Write `.agile/{iter}/prd.md` using `references/prd-template.md`. Include user stories, functional requirements (with AC-N IDs), non-functional requirements, out-of-scope items, and open questions.
 
 - **Challenger**: Read the PRD draft and produce a challenge report: missing edge cases, ambiguous acceptance criteria, hidden assumptions, scope creep risks.
 
@@ -123,7 +123,7 @@ The Orchestrator collects both returns and:
 1. Compiles a divergence table (objection vs. ProductOwner position).
 2. Presents one compact confirmation package to the user: the PRD summary, the divergence table, and a recommended resolution for each objection.
 3. After user confirms: ProductOwner produces the final PRD (prd_version incremented, status: confirmed). Run `scripts/validate-prd.sh` on the final PRD.
-4. Update state file: `phase: REQUIREMENTS_CONFIRMED`, `prd_path: docs/prd-{iter}.md`.
+4. Update state file: `phase: REQUIREMENTS_CONFIRMED`, `prd_path: .agile/{iter}/prd.md`.
 
 Do not start decomposition before user confirmation.
 

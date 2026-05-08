@@ -39,8 +39,11 @@ if [[ ! -f "$PRD_SCHEMA" ]]; then
 fi
 
 python3 -c "import yaml" 2>/dev/null || {
-  echo "FAIL: PyYAML is required. Run: pip3 install pyyaml"
-  exit 2
+  echo "INFO: PyYAML not found — installing automatically..."
+  pip3 install --quiet pyyaml || {
+    echo "FAIL: Could not install PyYAML. Run manually: pip3 install pyyaml"
+    exit 2
+  }
 }
 
 python3 - "$PRD_FILE" "$PRD_SCHEMA" <<'PYEOF'
@@ -95,6 +98,8 @@ errors = []
 
 
 def type_ok(expected, value):
+    if isinstance(value, bool) and expected in ("integer", "number"):
+        return False
     mapping = {
         "object": dict,
         "array": list,

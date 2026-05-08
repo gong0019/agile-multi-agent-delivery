@@ -59,12 +59,12 @@ mkdir -p "$ITER_DIR"
 STATE_FILE="${ITER_DIR}/state.md"
 PRD_PATH=".agile/${ITER_ID}/prd.md"
 
-# Generate state.md from template
+# Generate state.md from template (patterns match any valid template value, not hardcoded dates)
 sed \
-  -e "s/skill_version: \"2.0.0\"/skill_version: \"${SKILL_VERSION}\"/" \
-  -e "s/iteration_version: \"iter-20260506-01\"/iteration_version: \"${ITER_ID}\"/" \
-  -e "s|last_updated: \"2026-05-06T00:00:00Z\"|last_updated: \"${ISO_NOW}\"|" \
-  -e "s|prd_path: \".agile/iter-20260506-01/prd.md\"|prd_path: \"${PRD_PATH}\"|" \
+  -e "s|^skill_version: \"[^\"]*\"|skill_version: \"${SKILL_VERSION}\"|" \
+  -e "s|^iteration_version: \"iter-[0-9]*-[0-9]*\"|iteration_version: \"${ITER_ID}\"|" \
+  -e "s|^last_updated: \"[^\"]*\"|last_updated: \"${ISO_NOW}\"|" \
+  -e "s|^prd_path: \".agile/iter-[^\"]*\"|prd_path: \"${PRD_PATH}\"|" \
   "$TEMPLATE" > "$STATE_FILE"
 
 # Update CURRENT pointer atomically

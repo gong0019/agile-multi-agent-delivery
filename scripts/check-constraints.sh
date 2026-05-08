@@ -9,6 +9,14 @@ SKILL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CURRENT_STATE_SH="${SKILL_ROOT}/scripts/current-state.sh"
 VALIDATE_SH="${SKILL_ROOT}/scripts/validate-state.sh"
 
+python3 -c "import yaml" 2>/dev/null || {
+  echo "INFO: PyYAML not found — installing automatically..."
+  pip3 install --quiet pyyaml || {
+    echo "FAIL: Could not install PyYAML. Run manually: pip3 install pyyaml"
+    exit 2
+  }
+}
+
 # Resolve state file path
 if [[ $# -eq 0 ]]; then
   STATE_FILE=$(bash "$CURRENT_STATE_SH" 2>/dev/null) || {
