@@ -9,13 +9,7 @@
 
 ## 快速接入
 
-**第一步：安装依赖**（一次性）
-
-```bash
-pip3 install pyyaml
-```
-
-**第二步：把 skill 放进项目**
+**第一步：把 skill 放进项目**
 
 ```bash
 # 方式 A：直接复制
@@ -236,13 +230,7 @@ The main agent (**Orchestrator**) never writes code — it only orchestrates. Al
 
 ### Setup
 
-**Step 1: Install dependency** (once)
-
-```bash
-pip3 install pyyaml
-```
-
-**Step 2: Add the skill to your project**
+**Step 1: Add the skill to your project**
 
 ```bash
 # Option A: copy
