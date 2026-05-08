@@ -4,12 +4,20 @@
       {
         "matcher": "current-iteration\\.md",
         "hook": "bash ./scripts/validate-state.sh current-iteration.md"
+      },
+      {
+        "matcher": "docs/prd-.*\\.md",
+        "hook": "bash ./scripts/validate-prd.sh \"$MATCHED_FILE\""
       }
     ],
     "postToolUse": [
       {
         "matcher": "current-iteration\\.md",
-        "hook": "echo '[hook] state file was modified — consider running validate-state.sh to confirm integrity'"
+        "hook": "echo '[hook] state file modified — consider running validate-state.sh to confirm integrity'"
+      },
+      {
+        "matcher": "docs/prd-.*\\.md",
+        "hook": "echo '[hook] PRD file modified — consider running validate-prd.sh to confirm integrity'"
       }
     ]
   }

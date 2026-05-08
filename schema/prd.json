@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Product Requirements Document",
+  "description": "Schema for the YAML frontmatter of a PRD document produced by the ProductOwner agent. The Markdown body is human-readable and not validated by this schema.",
+  "type": "object",
+  "required": [
+    "prd_version",
+    "iteration_ref",
+    "status",
+    "last_updated"
+  ],
+  "properties": {
+    "prd_version": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Revision counter starting at 1, incremented on each ProductOwner revision"
+    },
+    "iteration_ref": {
+      "type": "string",
+      "pattern": "^iter-[0-9]{8}-[0-9]+$",
+      "description": "The iteration_version this PRD belongs to, e.g. iter-20260506-01"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "challenged", "confirmed"],
+      "description": "draft: ProductOwner wrote it; challenged: Challenger reviewed it; confirmed: user approved it"
+    },
+    "authored_by": {
+      "type": "string",
+      "description": "Role that authored this PRD, typically product-owner"
+    },
+    "challenged_by": {
+      "type": "string",
+      "description": "Role that reviewed this PRD adversarially, typically challenger"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last update, must include timezone"
+    },
+    "challenge_rounds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of challenge-and-revision rounds completed"
+    }
+  }
+}

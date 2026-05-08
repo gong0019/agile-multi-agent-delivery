@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Task Contract",
-  "description": "Schema for delegating bounded work slices to subagents. Each contract is derived from the current State Ledger.",
+  "description": "Schema for delegating bounded work slices to subagents. Each contract is derived from the current State Ledger and passed as the subagent's sole context.",
   "type": "object",
   "required": [
     "task_id",
@@ -27,6 +27,37 @@
       "pattern": "^v[0-9]+$",
       "description": "Version of the iteration round this contract was created in"
     },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "INIT",
+        "REQUIREMENTS_DRAFTING",
+        "REQUIREMENTS_REVIEW",
+        "REQUIREMENTS_CONFIRMED",
+        "PM_DECOMPOSITION",
+        "BUILDING",
+        "INTEGRATION_CHECK",
+        "TESTING",
+        "COMPLETE"
+      ],
+      "description": "Pipeline phase this contract belongs to"
+    },
+    "agent_role": {
+      "type": "string",
+      "enum": [
+        "product-owner",
+        "challenger",
+        "project-manager",
+        "builder",
+        "tester",
+        "integrator"
+      ],
+      "description": "Role of the agent receiving this contract"
+    },
+    "parallel_group": {
+      "type": "string",
+      "description": "Tag identifying which agents were spawned in the same batch, e.g. 'requirements-round-1'"
+    },
     "objective": {
       "type": "string",
       "minLength": 1,
@@ -38,7 +69,7 @@
       "items": {
         "type": "string"
       },
-      "description": "List of work items explicitly allowed"
+      "description": "Work items explicitly allowed"
     },
     "out_of_scope": {
       "type": "array",
@@ -46,7 +77,7 @@
       "items": {
         "type": "string"
       },
-      "description": "List of work items explicitly forbidden"
+      "description": "Work items explicitly forbidden"
     },
     "files_allowed": {
       "type": "array",
@@ -54,7 +85,7 @@
       "items": {
         "type": "string"
       },
-      "description": "File paths or glops the subagent may read or modify"
+      "description": "File paths or globs the subagent may read or modify"
     },
     "files_avoid": {
       "type": "array",
@@ -73,7 +104,7 @@
     "expected_deliverable": {
       "type": "string",
       "minLength": 1,
-      "description": "Concrete output the subagent must produce"
+      "description": "Concrete output the subagent must produce, in Agent Return format"
     },
     "stop_when": {
       "type": "string",
@@ -83,7 +114,7 @@
     "escalate_if": {
       "type": "string",
       "minLength": 1,
-      "description": "Decision point or blocker that requires main agent intervention"
+      "description": "Decision point or blocker that requires Orchestrator intervention"
     }
   }
 }

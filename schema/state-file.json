@@ -1,10 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Agile Multi Agent Delivery State File",
-  "description": "Schema for the YAML frontmatter of current-iteration.md. The Markdown body after the frontmatter is human-readable and not validated by this schema.",
+  "description": "Schema for the YAML frontmatter of .agile/{iter-id}/state.md (v2.0). The Markdown body after the frontmatter is human-readable and not validated by this schema.",
   "type": "object",
   "required": [
     "skill_version",
+    "phase",
     "product_version",
     "iteration_version",
     "overall_completion",
@@ -19,12 +20,27 @@
     "skill_version": {
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?$",
-      "description": "Semantic version of this skill that generated the state file"
+      "description": "Semantic version of the skill that generated this state file"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "INIT",
+        "REQUIREMENTS_DRAFTING",
+        "REQUIREMENTS_REVIEW",
+        "REQUIREMENTS_CONFIRMED",
+        "PM_DECOMPOSITION",
+        "BUILDING",
+        "INTEGRATION_CHECK",
+        "TESTING",
+        "COMPLETE"
+      ],
+      "description": "Current pipeline phase"
     },
     "product_version": {
       "type": "string",
       "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
-      "description": "Semantic intent of the product being worked on"
+      "description": "Semantic version of the product being worked on"
     },
     "iteration_version": {
       "type": "string",
@@ -34,22 +50,36 @@
     "overall_completion": {
       "type": "string",
       "pattern": "^[0-9]+%$",
-      "description": "Overall iteration completion percentage"
+      "description": "Overall iteration completion percentage, must match slice board within 10%"
     },
     "current_slice_completion": {
       "type": "string",
       "pattern": "^[0-9]+%$",
-      "description": "Current slice completion percentage"
+      "description": "Current active slice completion percentage"
     },
     "last_updated": {
       "type": "string",
       "format": "date-time",
-      "description": "ISO 8601 timestamp of last state update"
+      "description": "ISO 8601 timestamp of last state update, must include timezone"
     },
     "active_objective": {
       "type": "string",
       "minLength": 1,
-      "description": "One paragraph summary of current goal"
+      "description": "One paragraph summary of the current iteration goal"
+    },
+    "prd_path": {
+      "type": "string",
+      "description": "Relative path to the PRD document produced in REQUIREMENTS phase, e.g. docs/prd-iter-20260506-01.md"
+    },
+    "builder_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of Builder agents assigned by the ProjectManager"
+    },
+    "tester_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of Tester agents assigned, formula: ceil(builder_count / 2), minimum 1"
     },
     "acceptance_criteria": {
       "type": "array",
@@ -90,7 +120,19 @@
           },
           "owner": {
             "type": "string",
-            "enum": ["delivery-lead", "scope-analyst", "builder", "reviewer", "technical-architect"]
+            "enum": [
+              "orchestrator",
+              "product-owner",
+              "challenger",
+              "project-manager",
+              "builder",
+              "tester",
+              "integrator",
+              "delivery-lead",
+              "scope-analyst",
+              "reviewer",
+              "technical-architect"
+            ]
           },
           "status": {
             "type": "string",
@@ -153,7 +195,7 @@
     "next_resume_prompt": {
       "type": "string",
       "minLength": 1,
-      "description": "Exact prompt for resuming after context reset"
+      "description": "Exact instruction for resuming after a context reset or new thread"
     }
   }
 }

@@ -1,4 +1,4 @@
-name: Validate State File
+name: Validate Skill Artifacts
 
 on:
   push:
@@ -6,13 +6,16 @@ on:
     paths:
       - 'current-iteration.md'
       - 'references/iteration-state-template.md'
+      - 'references/prd-template.md'
       - 'scripts/**'
       - 'schema/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
     paths:
       - 'current-iteration.md'
       - 'references/iteration-state-template.md'
+      - 'references/prd-template.md'
       - 'scripts/**'
       - 'schema/**'
       - 'tests/**'
@@ -23,16 +26,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python 3
+      - name: Install Python 3 and PyYAML
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3
+          sudo apt-get install -y python3 python3-pip
+          pip3 install pyyaml
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh tests/*.sh
 
       - name: Run state validation tests
         run: bash tests/test-validate-state.sh
 
-      - name: Validate template integrity
+      - name: Run PRD validation tests
+        run: bash tests/test-validate-prd.sh
+
+      - name: Run .agile/ directory structure tests
+        run: bash tests/test-agile-dir.sh
+
+      - name: Validate state template integrity (direct path)
         run: bash scripts/validate-state.sh references/iteration-state-template.md
 
-      - name: Run constraint checks
+      - name: Validate PRD template integrity (direct path)
+        run: bash scripts/validate-prd.sh references/prd-template.md
+
+      - name: Run constraint checks on valid fixture (direct path)
         run: bash scripts/check-constraints.sh tests/fixtures/valid-state.md

@@ -1,141 +1,242 @@
 ---
 name: agile-multi-agent-delivery
-version: "1.0.0"
+version: "2.0.0"
 description: |
-  Run a software task like a disciplined multi-agent agile team. Use this skill when you want an AI coding agent to act like a real development team with requirement analysis, technical design, parallel agent delegation, implementation, verification, and a persistent iteration state file that survives context resets or a fresh thread. This skill should convert a request into a confirmed delivery brief, create or update a repository-local state file such as `current-iteration.md`, delegate bounded parallel work to subagents, keep the main agent on the critical path, and maintain version, requirement detail, completion, risks, and next-step continuity.
+  Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: two requirement agents (ProductOwner + Challenger) in parallel, one ProjectManager that decomposes work into bounded slices, N Builder agents that implement in parallel with strictly disjoint file ownership, an integration check gate, and M Tester agents. Every phase produces a validated artifact. The state file survives context resets.
 ---
 
 # Agile Multi Agent Delivery
 
-Use this skill when the user wants a team-style delivery workflow instead of a single linear coding pass.
+Use this skill when the user wants a disciplined, multi-phase delivery workflow instead of a single linear coding pass.
 
 This skill is for:
 
-- multi-agent implementation
-- iterative feature delivery
-- requirement clarification before execution
-- persistent project state that can survive context resets
-- disciplined ownership, verification, and handoff
+- multi-module or multi-file feature work
+- iterative delivery with persistent state tracking
+- implementation tasks that can be split into safe parallel slices
+- requests that need explicit requirements, scope, acceptance criteria, and risk tracking
 
 This skill is not for:
 
-- one-off trivial edits that do not benefit from delegation
-- vague brainstorming with no intent to execute
-- blind delegation of the critical path
+- one-off trivial edits
+- brainstorming with no execution intent
+- handing the whole critical path to subagents
 
-## Outcome
+---
 
-The agent should behave like a compact agile team with explicit roles:
+## Architecture
 
-1. convert the request into a delivery brief
-2. get one clear confirmation gate from the user
-3. create or update the iteration state file
-4. split the work into bounded slices
-5. delegate safe parallel slices to subagents
-6. keep integration, risky decisions, and final synthesis in the main agent
-7. record completion, risks, version movement, and the next resume prompt
+### Pipeline Phases
 
-## Required files
+```
+INIT
+ └→ REQUIREMENTS_DRAFTING    ProductOwner + Challenger (parallel, independent)
+ └→ REQUIREMENTS_REVIEW      Orchestrator mediates divergence → user confirms
+ └→ REQUIREMENTS_CONFIRMED   PRD locked
+ └→ PM_DECOMPOSITION         ProjectManager decomposes PRD into bounded slices
+ └→ BUILDING                 N Builder agents (parallel, disjoint file ownership)
+ └→ INTEGRATION_CHECK        Orchestrator validates all Builder returns
+ └→ TESTING                  M Tester agents (parallel)
+ └→ COMPLETE
+```
 
-The default repository-local state file for this skill is:
+### Role Set
 
-- `current-iteration.md`
+| Role | Type | Owns | Never Does |
+| --- | --- | --- | --- |
+| Orchestrator | main agent | state file, phase transitions, user communication | writes code, reads large source files |
+| ProductOwner | explorer | PRD document | writes code |
+| Challenger | explorer | adversarial PRD review | writes code, modifies PRD directly |
+| ProjectManager | explorer | decomposition plan, Task Contracts | writes code, makes product decisions |
+| Builder-N | worker | one bounded implementation slice | touches files outside its Task Contract |
+| Tester-N | worker | test files for assigned slices | modifies non-test source files |
+| Integrator | worker (optional) | cross-slice integration conflicts | re-implements already-done slices |
 
-If the repository root already has its own equivalent agile state file, reuse that instead of forcing a rename.
+---
 
-Only fall back to another repository-local equivalent file when the root file does not exist and the repository already has an established convention.
+## Iteration Directory Structure
 
-When it does not exist, create it from:
+All skill-generated files live under `.agile/` in the repository root. This keeps the project's own files completely untouched.
 
-- `references/iteration-state-template.md`
+```
+[project-root]/
+  .agile/
+    CURRENT                        ← one-line text file: active iteration ID
+    iter-20260508-01/              ← active iteration
+      state.md                     ← machine-validated delivery state
+      prd.md                       ← PRD document (created in REQUIREMENTS phase)
+    iter-20260421-01/              ← completed iteration, permanently archived
+      state.md
+      prd.md
+```
 
-When role boundaries or delegation behavior need to be checked, read:
+**Key invariants:**
 
-- `references/team-operating-model.md`
+- `CURRENT` is the single authority on which iteration is active
+- Each iteration directory is named `iter-YYYYMMDD-NN` (auto-increments if multiple per day)
+- Completed iterations (`phase: COMPLETE`) remain in their directory forever — never deleted or overwritten
+- Starting a new iteration creates a new directory; the previous one is untouched
+- Commit `.agile/` to git to preserve the full delivery history
 
-## Team shape
+**Required files (skill infrastructure, not generated per project):**
 
-Keep the role set small. Do not simulate a large org chart.
+- Template: `references/iteration-state-template.md`
+- PRD template: `references/prd-template.md`
+- Role boundaries: `references/team-operating-model.md`
+- PM decomposition rules: `references/pm-decomposition-guide.md`
 
-Default roles:
-
-1. `delivery-lead`
-   The main agent. Always the single owner of user communication, scope control, integration, and final truth.
-2. `scope-analyst`
-   An `explorer` used only when requirement edges, impact analysis, or parallel split points need clarification.
-3. `builder`
-   A `worker` that owns one bounded implementation slice with a disjoint write scope.
-4. `reviewer`
-   An `explorer` or `worker` that performs an independent review or focused verification pass.
-
-Do not introduce extra role theater such as PM, staff engineer, QA manager, or documentation specialist unless the task truly demands it. Absorb those functions into the role set above.
+---
 
 ## Workflow
 
-### 1. Build the delivery brief
+### 1. Build the Delivery Brief (Orchestrator)
 
-Before doing substantive work:
+Before doing any substantial work:
 
-1. read repository rules already required by the environment
-2. inspect only the code and docs needed to understand the request
-3. rewrite the request into a concrete delivery brief with:
+1. Read repository rules already required by the environment.
+2. Inspect only the minimal code and docs needed to understand the request.
+3. Rewrite the request into a concrete delivery brief:
    - target outcome
    - business reason or user value
    - in-scope items
    - explicit out-of-scope items
    - constraints
-   - acceptance criteria
+   - candidate acceptance criteria
    - unknowns and risks
 
 Do not ask a long list of questions. Infer aggressively. Ask only for details that would change the outcome or create material risk.
 
-### 2. Confirmation gate
+### 2. Spawn Requirements Agents (parallel)
 
-Before broad implementation, present one compact confirmation package. It should contain:
+After forming an initial understanding, spawn ProductOwner and Challenger in the same turn:
 
-1. your understanding of the request
-2. the execution approach
-3. the first proposed iteration slices
-4. any assumptions that need approval
+- **ProductOwner**: Write `docs/prd-{iter}.md` using `references/prd-template.md`. Include user stories, functional requirements (with AC-N IDs), non-functional requirements, out-of-scope items, and open questions.
 
-After the user confirms, move into autonomous execution mode. Do not keep asking for permission on every micro-step unless:
+- **Challenger**: Read the PRD draft and produce a challenge report: missing edge cases, ambiguous acceptance criteria, hidden assumptions, scope creep risks.
 
-- there is destructive risk
-- the requirement is truly ambiguous
-- a product choice materially changes UX, data shape, or architecture
+Both agents work independently. They do not communicate with each other.
 
-### 3. Initialize the persistent state
+### 3. Requirements Review and Confirmation Gate
 
-Create or update `current-iteration.md` in the repository root immediately after confirmation.
+The Orchestrator collects both returns and:
 
-This file is the single source of truth across `/clear`, new threads, and context compression. Keep it current after every meaningful slice.
+1. Compiles a divergence table (objection vs. ProductOwner position).
+2. Presents one compact confirmation package to the user: the PRD summary, the divergence table, and a recommended resolution for each objection.
+3. After user confirms: ProductOwner produces the final PRD (prd_version incremented, status: confirmed). Run `scripts/validate-prd.sh` on the final PRD.
+4. Update state file: `phase: REQUIREMENTS_CONFIRMED`, `prd_path: docs/prd-{iter}.md`.
 
-At minimum, the file must track:
+Do not start decomposition before user confirmation.
 
-- product version
-- iteration version
-- current objective
-- accepted scope
-- acceptance criteria
-- slice-level ownership and status
-- completion percentage
-- changed files
-- verification status
-- open risks and blockers
-- exact next resume prompt
+After confirmation, enter autonomous execution mode. Do not ask permission on every micro-step unless there is destructive risk, genuine ambiguity, or a product choice that materially changes UX, data shape, or architecture.
 
-Use stable IDs for acceptance criteria, decisions, slices, and risks. Example:
+### 4. Initialize or Update the Persistent State
 
-- `AC-1`
-- `DEC-2`
-- `SL-03`
-- `RISK-1`
+Create or update `.agile/{iteration_version}/state.md` immediately after confirmation. Use `scripts/init-state.sh` to create the iteration directory if it does not exist. Use `scripts/current-state.sh` to locate the active state file in subsequent steps.
 
-When the user changes the request in a meaningful way, increment the state version inside the file and re-baseline the active plan before delegating more work.
+This file is the single source of truth across `/clear`, new threads, and context compression. Update it after every phase transition and every completed slice.
 
-### 4. Shared-contract risk flags
+Run `scripts/validate-state.sh` (no argument needed — it reads `CURRENT` automatically) before delegating new work and after completing a slice.
 
-In any repository, elevate these areas to main-agent integration responsibility unless the subtask is extremely narrow:
+Required frontmatter fields:
+
+- `skill_version` — version of this skill
+- `phase` — current pipeline phase
+- `product_version` — semantic version of the product
+- `iteration_version` — `iter-YYYYMMDD-NN`
+- `overall_completion` — percentage matching slice board within 10%
+- `current_slice_completion`
+- `last_updated` — ISO 8601 with timezone
+- `prd_path` — path to confirmed PRD
+- `builder_count` — set by PM decomposition
+- `tester_count` — set by PM decomposition
+- `active_objective`
+- `acceptance_criteria` — array with AC-N IDs
+- `slice_board` — array with SL-N IDs
+- `next_resume_prompt` — exact instruction for resuming after reset
+
+Use stable IDs: `AC-N`, `DEC-N`, `SL-N`, `RISK-N`, `TASK-N`.
+
+### 5. ProjectManager Decomposition
+
+Spawn one ProjectManager agent. Provide:
+
+- the confirmed PRD path
+- a compact summary of the repository structure (file tree, not file contents)
+- a reference to `references/pm-decomposition-guide.md`
+
+The ProjectManager must return:
+
+- an ownership map (strict disjoint sets: `{SL-N: [file1, file2]}`)
+- one Task Contract per Builder
+- `builder_count` and `tester_count`
+
+Before spawning Builder agents, the Orchestrator validates the ownership map:
+
+- run `scripts/check-constraints.sh` which checks Constraint 7 (no two slices share a file in BUILDING phase)
+- if conflicts found: return the plan to the ProjectManager for re-decomposition
+
+Update state file: `phase: BUILDING`, `builder_count: N`, `tester_count: M`.
+
+#### Granularity Rules (summary)
+
+| Estimated file changes | Builder count |
+| --- | --- |
+| 1–3 | 1 |
+| 4–10 | 2–3 |
+| 11–20 | 3–4 |
+| 21+ | 4–6 (hard max) |
+
+Full rules in `references/pm-decomposition-guide.md`.
+
+### 6. Parallel Building
+
+Spawn all Builder agents in the same turn. Each Builder receives its Task Contract.
+
+Builder Task Contract requirements:
+
+- `task_id`: `TASK-N`
+- `phase`: `BUILDING`
+- `agent_role`: `builder`
+- `parallel_group`: same tag for this batch
+- `files_allowed`: exact owned files
+- `files_avoid`: all files owned by other Builders
+- `must_respect`: API contracts, migration constraints, coding standards
+- `expected_deliverable`: Agent Return with changed files, verification, risks
+- `stop_when`: all owned files implemented and verified
+- `escalate_if`: any required change is outside `files_allowed`
+
+While Builders run, the Orchestrator updates the state file phase log and prepares the integration check criteria. Do not wait idly.
+
+### 7. Integration Check Gate
+
+After all Builders return, the Orchestrator performs a structured check — based on agent returns only, no file reading:
+
+1. Check `files_changed` across all returns for unexpected overlap.
+2. Check for any `RISK` items with severity `high` or `critical`.
+3. Check that all slices report a `Validation Performed` entry.
+
+**If check passes**: update state file to `phase: TESTING`, spawn Tester agents.
+
+**If check fails**: create one Integrator agent with a narrowly scoped Task Contract targeting only the conflict or critical risk. After Integrator completes, re-run the check.
+
+### 8. Parallel Testing
+
+`tester_count = max(1, ceil(builder_count / 2))`
+
+Each Tester covers 2 Builders' output. Assign by feature proximity.
+
+Tester Task Contract requirements:
+
+- `agent_role`: `tester`
+- `files_allowed`: test files for assigned slices, plus read-only access to source files
+- `files_avoid`: source files (no modifications)
+- `expected_deliverable`: test results, AC-N status per criterion (met / failed / untestable), coverage gaps as RISK-N items
+
+Bugs found by Testers are recorded as `RISK-N` items. Fixing them is a new iteration slice, not part of the current Tester's scope.
+
+### 9. Shared-Contract Risk Areas
+
+Elevate these to main-agent integration responsibility unless the task is extremely narrow:
 
 - authentication and authorization flows
 - routing, navigation, or app-entry control flow
@@ -144,154 +245,53 @@ In any repository, elevate these areas to main-agent integration responsibility 
 - schema migrations and cross-service data compatibility
 - tests or scripts that create, mutate, or delete real data
 
-Subagents may inspect or propose changes in these areas, but the delivery lead should make the final integration decision.
+Subagents may inspect or propose changes in these areas, but the Orchestrator makes the final integration decision.
 
-If the repository has known critical files or business invariants, record them in the state file under `Key Repo Constraints` instead of hardcoding them into the skill.
+Record known critical files or business invariants under `Key Repo Constraints` in the state file.
 
-### 5. Role rules
+### 10. Versioning Rules
 
-The main agent must own:
+`product_version` follows semantic intent:
+- major: breaking flow, migration, or architecture reset
+- minor: new feature slice or meaningful capability expansion
+- patch: bug fix, refinement, or small behavior correction
 
-- user communication
-- the canonical plan
-- the iteration state file
-- critical-path repo inspection
-- integration points across multiple slices
-- final conflict resolution
-- final verification and delivery summary
+`iteration_version` format: `iter-YYYYMMDD-NN`
 
-Subagents should own:
+Bump `iteration_version` when a new confirmed request or new major slice starts. Do not bump for brief revisions or consistency fixes.
 
-- bounded research questions
-- isolated file groups
-- test additions that do not block immediate local work
-- review and verification passes that can run in parallel
+### 11. Update Cadence
 
-Do not delegate the immediate blocking task if the next local step depends on it. Do not wait on agents by reflex. Continue non-overlapping work while they run.
+Update the active state file (`.agile/{iteration_id}/state.md`) when any of these happen:
 
-### 6. Delegation rules
-
-When spawning agents:
-
-1. state the exact output you need
-2. define ownership boundaries, especially files
-3. remind workers they are not alone in the codebase
-4. tell workers not to revert unrelated edits
-5. require changed-file reporting in the final response
-6. keep subtasks concrete and self-contained
-7. pass a short `Task Contract` instead of raw chat history
-
-Every delegated task should be derived from a current `State Ledger` and wrapped in a compact `Task Contract`.
-
-The `Task Contract` must include:
-
-- `Task ID`
-- `Round Version`
-- `Objective`
-- `In Scope`
-- `Out of Scope`
-- `Files/Paths Allowed`
-- `Files/Paths Avoid`
-- `Must Respect`
-- `Expected Deliverable`
-- `Stop When`
-- `Escalate If`
-
-Good delegation examples:
-
-- investigate which modules are impacted by a feature request
-- implement API validation in one isolated server module
-- add tests for a specific flow in one test file
-- review a diff for behavioral regressions
-
-Bad delegation examples:
-
-- “build the whole feature”
-- “figure out the whole repo”
-- “do the critical path and I will wait”
-
-### 7. Slice planning
-
-Break execution into thin, reviewable slices. Each slice should have:
-
-- a stable ID
-- a narrow outcome
-- a clear owner
-- a status
-- affected files
-- verification notes
-
-Prefer slices that can be completed and recorded independently. A slice can be:
-
-- requirement clarification
-- design decision
-- schema change
-- UI implementation
-- API implementation
-- state-management update
-- test coverage
-- regression verification
-
-### 8. Versioning rules
-
-Maintain both versions in `current-iteration.md`.
-
-- `product_version`
-  Use semantic intent:
-  - major: breaking flow, migration, or architecture reset
-  - minor: new feature slice or meaningful capability expansion
-  - patch: bug fix, refinement, or small behavior correction
-
-- `iteration_version`
-  Use a resumable sequence such as `iter-YYYYMMDD-01`.
-  Bump it whenever a new confirmed request or a new major slice starts.
-
-Also maintain:
-
-- `overall_completion`
-- `current_slice_completion`
-
-Do not fake 100 percent if validation is missing or known risks remain.
-
-### 9. Update cadence
-
-Update `current-iteration.md` when any of these happen:
-
-- the request is confirmed
-- a slice starts
-- a slice completes
+- request is confirmed
+- phase transitions
+- a slice starts or completes
 - scope changes
 - a blocker appears
-- verification changes confidence
+- integration check runs
 - final delivery is ready
 
-The file should always be good enough that a fresh agent can resume from it with minimal extra context.
+The file must always be complete enough for a fresh Orchestrator to resume with no other context.
 
-Do not forward long subagent outputs verbatim into later delegations. First compress them into structured facts inside the state file.
+Do not forward long subagent outputs verbatim. Compress into structured facts before writing to the state file.
 
-### 10. Context reset protocol
+### 12. Context Reset Protocol
 
-The agent cannot execute `/clear` itself, but it must actively prepare for it.
+The Orchestrator cannot execute `/clear` itself, but must actively prepare for it.
 
-After each completed requirement or major detail, write a precise resume prompt into `current-iteration.md` and tell the user they can reset context with a message like:
+After each completed phase or major slice, write a precise resume prompt into the `next_resume_prompt` field of the active state file and tell the user:
 
-`Read current-iteration.md and continue with $agile-multi-agent-delivery from the Next Resume Prompt section.`
+`Run scripts/current-state.sh to find the active state file, read it, then continue with $agile-multi-agent-delivery from the next_resume_prompt field.`
 
-When the thread becomes long, prefer a reset after the state file is fully updated.
+The `next_resume_prompt` must include:
+- current `phase`
+- the next action (e.g. "Spawn Tester agents for SL-01 and SL-02")
+- relevant decision and risk IDs to respect
 
-Recommended cadence:
+### 13. Verification Rules
 
-1. confirm the request
-2. write or update the `State Ledger`
-3. perform the first local boundary scan
-4. spawn only independent workstreams
-5. continue local critical-path work
-6. collect agent returns
-7. merge outcomes back into the `State Ledger`
-
-### 11. Verification rules
-
-Every slice should end with the strongest practical verification available:
+Every slice must end with the strongest practical verification available:
 
 - targeted build or type check
 - unit or integration coverage
@@ -300,54 +300,64 @@ Every slice should end with the strongest practical verification available:
 
 Record what was run, what was not run, and why.
 
-### 12. Completion rules
+### 14. Completion Rules
 
 A request is complete only when all of these are true:
 
 1. confirmed scope is implemented or explicitly deferred
-2. the state file reflects the latest truth
-3. verification status is recorded honestly
-4. residual risks are surfaced
-5. the next resume prompt is ready for the next iteration
+2. the state file reflects the latest truth (`phase: COMPLETE`)
+3. all acceptance criteria have a recorded status
+4. verification status is recorded honestly
+5. residual risks are surfaced
+6. the next resume prompt is ready for the next iteration
 
-## 13. Error Handling
+### 15. State Validation Cadence
 
-When problems occur, follow the procedures in `references/error-recovery.md`. Key scenarios:
+Run `scripts/validate-state.sh`:
 
-- **User rejects the brief**: Record the reason, ask targeted clarifying questions, rewrite and re-present. Do not bump iteration version for brief revisions.
-- **State file corruption**: Recover from git history or re-initialize from template. Bump iteration version and record the recovery decision.
-- **Sub-agent returns incomplete work**: Integrate valid portions, mark slice as `in_progress`, and either complete locally (critical path) or defer (non-critical).
-- **Concurrent iteration conflict**: Merge updates from other sessions, bump iteration version, and ask the user to resolve incompatible scope changes.
-- **Context loss after reset**: The `next_resume_prompt` in the state file frontmatter is the exact instruction to continue. If missing, construct one from the slice board.
+- before delegating new work
+- after completing a slice
+- before declaring an iteration complete
+- when resuming from a context reset
 
-## 14. State Validation
+Run `scripts/validate-prd.sh`:
 
-The state file must include a YAML frontmatter that passes validation by `scripts/validate-state.sh`. Run validation:
+- after ProductOwner produces the PRD
+- after the final confirmed revision
 
-- Before delegating new work
-- After completing a slice
-- Before declaring an iteration complete
-- When resuming from a context reset
+Run `scripts/check-constraints.sh`:
 
-The schema is defined in `schema/state-file.json`. Required frontmatter fields:
-`skill_version`, `product_version`, `iteration_version`, `overall_completion`,
-`current_slice_completion`, `last_updated`, `active_objective`, `acceptance_criteria`,
-`slice_board`, `next_resume_prompt`.
+- before spawning Builder agents (validates ownership map via Constraint 7)
+- when resuming from a context reset
 
-Stable IDs must follow the pattern: `AC-N`, `DEC-N`, `SL-N`, `RISK-N`, `TASK-N`.
+### 16. Error Handling
 
-## Operating stance
+When problems occur, follow `references/error-recovery.md`. Key scenarios:
 
-This skill should feel like a strong delivery lead:
+- **User rejects brief**: record reason, ask targeted questions, rewrite
+- **State file corruption**: recover from git history or re-initialize from template
+- **Challenger blocks indefinitely**: after 2 rounds, compile table and escalate to user
+- **PM ownership conflict**: reject plan, PM re-decomposes; after 2 failures Orchestrator resolves directly
+- **Builder touches forbidden files**: assess impact, accept if non-conflicting, or revert and re-contract
+- **Sub-agent incomplete work**: integrate valid portions, mark slice `in_progress`, escalate if critical
+- **Context loss**: read `next_resume_prompt` from state file frontmatter
+
+---
+
+## Operating Stance
+
+This skill should feel like a strong delivery pipeline:
 
 - structured, not bureaucratic
 - autonomous after confirmation
-- aggressive about parallelism when safe
+- aggressive about parallelism when file ownership is clean
 - conservative about ambiguity and destructive risk
-- explicit about ownership, verification, and continuity
+- explicit about ownership, verification, and phase continuity
 
-## Resume command
+---
 
-When resuming after `/clear` or in a new thread, instruct the next agent to start with:
+## Resume Command
 
-`Read current-iteration.md and continue with $agile-multi-agent-delivery.`
+When resuming after `/clear` or in a new thread:
+
+`Run scripts/current-state.sh to find the active state file, read it, then continue with $agile-multi-agent-delivery from the next_resume_prompt field.`

@@ -1,123 +1,141 @@
 # Team Operating Model
 
-Use this reference when the task clearly benefits from multiple subagents and explicit handoffs.
+This reference defines how the seven roles operate within the pipeline orchestration model. Read it when you need to check role boundaries, delegation rules, or wait policy.
 
-## Core principle
+## Core Principle
 
-The main agent is the delivery lead, not a passive coordinator.
+The Orchestrator is the delivery lead, not a passive coordinator. It owns the state file, drives phase transitions, and is the only agent that communicates with the user.
 
-The main agent should:
+The Orchestrator must never write code, read large source files, or accumulate raw subagent output in its context. Every subagent must return a structured Agent Return of no more than 200 lines.
 
-- own the repo truth
-- keep the critical path moving locally
-- delegate only bounded sidecar work
-- integrate results
-- update the canonical state file
+---
 
-## Recommended roles
+## Phase-Aware Role Activation
 
-### 1. Delivery Lead
+| Phase | Active Roles |
+| --- | --- |
+| INIT | Orchestrator |
+| REQUIREMENTS_DRAFTING | ProductOwner, Challenger (parallel) |
+| REQUIREMENTS_REVIEW | Orchestrator (mediates), then ProductOwner (revises) |
+| REQUIREMENTS_CONFIRMED | Orchestrator (user gate) |
+| PM_DECOMPOSITION | ProjectManager |
+| BUILDING | Builder × N (parallel) |
+| INTEGRATION_CHECK | Orchestrator (struct check), optionally Integrator |
+| TESTING | Tester × M (parallel) |
+| COMPLETE | Orchestrator (delivery summary) |
 
-This is the main agent and the only role that is always active.
+---
 
-Deliverables:
+## Role Definitions
 
-- round brief
-- task contracts
-- state ledger updates
-- integration decisions
-- final user-facing delivery summary
+### Orchestrator (main agent, always active)
+
+Deliverables: delivery brief, phase transitions, state file updates, user-facing summary.
 
 Responsibilities:
+- Own all user communication
+- Own the active state file (`.agile/{iteration_id}/state.md`)
+- Drive phase transitions based on agent returns
+- Validate PM decomposition before spawning Builders
+- Run integration check after all Builders complete
+- Synthesize Tester returns into final delivery summary
 
-- own user communication
-- own scope and acceptance
-- keep critical-path work local
-- decide what is safe to delegate
-- merge delegated results into the canonical state
+Constraints:
+- Never writes source code
+- Never reads files larger than needed to assess an agent return
+- Never accumulates raw agent output — compress into structured facts before writing to state file
 
-### 2. Scope Analyst
+### ProductOwner (explorer, REQUIREMENTS phases)
 
-Use an `explorer` when the requirement is incomplete, user-facing, or carries edge-case risk.
+Deliverables: `docs/prd-{iter}.md` in PRD template format.
 
-Deliverables:
+Responsibilities:
+- Read the user request and minimal repo context
+- Write a complete PRD with user stories, functional requirements, and acceptance criteria
+- Revise the PRD once after receiving the Challenger objection table from the Orchestrator
 
-- clarified acceptance criteria
-- hidden assumptions
-- out-of-scope list
-- edge cases and failure states
+Constraints:
+- Never writes source code
+- Does not interact directly with the Challenger — all communication goes through the Orchestrator
 
-### 3. Technical Architect
+### Challenger (explorer, REQUIREMENTS_DRAFTING, runs in parallel with ProductOwner)
 
-Use an `explorer` when codebase shape, data flow, or architecture impact is unclear.
+Deliverables: challenge report (objections list, edge cases, gaps, contradictions).
 
-Deliverables:
+Responsibilities:
+- Receive the PRD from the Orchestrator (or read it from `prd_path`)
+- Identify: missing edge cases, ambiguous acceptance criteria, hidden assumptions, scope creep risks
+- Return a structured objection list to the Orchestrator
 
-- impacted modules
-- approach options and tradeoffs
-- migration or compatibility risk
-- proposed verification plan
+Constraints:
+- Never writes source code
+- Does not modify the PRD directly
+- Does not re-run after one challenge round unless the Orchestrator explicitly re-activates it
 
-This role is optional. Use it only when architectural discovery is distinct from scope analysis.
+### ProjectManager (explorer, PM_DECOMPOSITION)
 
-### 4. Builder
+Deliverables: ownership map + Builder Task Contracts + Tester count.
 
-Use `worker` agents only for isolated write scopes.
+Responsibilities:
+- Read the confirmed PRD and repository file tree
+- Apply the granularity rules from `references/pm-decomposition-guide.md`
+- Produce a decomposition plan with strictly disjoint file ownership
+- Self-validate: no file in two slices
 
-Good ownership examples:
+Constraints:
+- Never writes source code
+- Does not make product decisions — escalates to Orchestrator
 
-- one API module
-- one state-management module
-- one UI feature area
-- one test file or test directory
+### Builder-N (worker, BUILDING, spawned in parallel)
 
-Worker instructions should always include:
+Deliverables: implemented slice + Agent Return with changed files, verification notes, risks.
 
-- exact ownership
-- no reverting others' edits
-- adapt to concurrent changes if needed
-- report changed files and notable risks
+Responsibilities:
+- Read and implement only files in `files_allowed`
+- Report every changed file in the Agent Return
+- Run the strongest available verification (type check, unit tests, lint)
+- Escalate immediately if any required change is outside `files_allowed`
 
-### 5. Reviewer
+Constraints:
+- Never touches files outside `files_allowed`
+- Never reverts changes made by other Builders
+- If a shared file needs a change the Builder does not own: describe in `Needs Orchestrator Decision`, do not modify the file
 
-Use an `explorer` or `worker` for:
+### Tester-N (worker, TESTING, spawned in parallel)
 
-- test-gap analysis
-- regression review
-- focused verification
+Deliverables: test results + coverage gap report + pass/fail per acceptance criterion.
 
-This role is especially useful while implementation continues locally.
+Responsibilities:
+- Cover the assigned Builders' slices
+- Run unit, integration, or E2E tests as available
+- Report AC-N status (met / failed / untestable)
+- Identify coverage gaps and surface as RISK-N items
 
-## Delegation matrix
+Constraints:
+- May only write to test files
+- May not modify source files
+- If a bug is found: report it as RISK-N with severity, do not fix it (fixing is a new iteration slice)
 
-Delegate these freely when the outputs are bounded:
+### Integrator (worker, optional, INTEGRATION_CHECK)
 
-- codebase questions
-- requirement edge-case analysis
-- independent code slices with disjoint files
-- test creation in isolated files
-- regression review of a finished diff
+Deliverables: resolved cross-slice conflicts + integration test results.
 
-Keep these local unless there is a strong reason otherwise:
+Constraints:
+- Created only when the Orchestrator's integration check finds file overlap or critical risks
+- Scope is limited to resolving the specific conflict — not a general refactor
 
-- first-pass repo understanding
-- integrating multiple changed slices
-- editing conflict-prone entry points
-- final user-facing summary
-- state-file maintenance
-- urgent blocking tasks
+---
 
-## State compression
+## State Compression
 
-Do not pass long chat transcripts or raw subagent essays forward.
-
-Compress every round into a short `State Ledger`, then derive each delegated `Task Contract` from it.
+Do not pass raw agent outputs forward. Every round must be compressed into a short `State Ledger` before the next delegation.
 
 Recommended `State Ledger` fields:
 
 ```md
 ## State Ledger vN
 - Goal:
+- Phase:
 - Non-goals:
 - Acceptance Criteria:
 - Confirmed Constraints:
@@ -130,24 +148,7 @@ Recommended `State Ledger` fields:
 - Risks:
 ```
 
-Recommended `Task Contract` fields:
-
-```md
-## Task Contract
-- Task ID:
-- Round Version:
-- Objective:
-- In Scope:
-- Out of Scope:
-- Files/Paths Allowed:
-- Files/Paths Avoid:
-- Must Respect:
-- Expected Deliverable:
-- Stop When:
-- Escalate If:
-```
-
-Recommended subagent return shape:
+Every subagent returns an `Agent Return`:
 
 ```md
 ## Agent Return
@@ -158,49 +159,29 @@ Recommended subagent return shape:
 - Key Findings or Changes:
 - Risks:
 - Validation Performed:
-- Needs Main-Agent Decision:
+- Needs Orchestrator Decision:
 ```
 
-## Wait policy
+---
 
-Do not call `wait_agent` immediately after spawning.
+## Wait Policy
 
-Spawn agents only after deciding what the main agent can do next without them. Wait only when:
+Do not wait on agents by reflex. After spawning a parallel batch, the Orchestrator should update the state file for the current phase transition, then wait.
 
-- the next critical-path action is blocked on the result
-- integration cannot proceed without the answer
-- you are ready to review and merge a finished delegated slice
+Wait only when:
+- the next phase cannot start without all agent returns
+- the integration check cannot proceed without all Builder returns
 
-## Slice design rules
+---
 
-A good slice is:
-
-- independently understandable
-- easy to verify
-- unlikely to conflict with another slice
-- small enough to finish in one iteration update
-
-Prefer these slice boundaries:
-
-- route layer vs page component
-- API parser vs business logic
-- data model change vs UI adaptation
-- feature implementation vs regression coverage
-
-Avoid these slice boundaries:
-
-- splitting one tiny file across multiple workers
-- assigning one worker both architecture discovery and final integration
-- delegating work that depends on unresolved product choices
-
-## Context durability
+## Context Durability
 
 To survive `/clear` or a fresh thread:
 
-1. update the repository-local iteration state file, typically `current-iteration.md` in the repository root
-2. include exact remaining work
-3. include the next resume prompt
-4. include changed files and verification status
-5. include open risks and decisions
+1. Update the active state file after every phase transition
+2. Record `phase` in frontmatter
+3. Record `prd_path` once PRD is created
+4. Set `next_resume_prompt` to include the current phase and next action
+5. Include open risks and decisions
 
-The next agent should be able to continue by reading that file first, without relying on hidden chat history.
+A fresh Orchestrator should be able to continue by running `scripts/current-state.sh`, reading the active state file, and following `next_resume_prompt` — without relying on hidden chat history.

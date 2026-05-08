@@ -1,10 +1,14 @@
 ---
-skill_version: "1.0.0"
+skill_version: "2.0.0"
+phase: "BUILDING"
 product_version: "v0.1.0"
 iteration_version: "iter-20260506-01"
 overall_completion: "50%"
 current_slice_completion: "100%"
 last_updated: "2026-05-06T10:00:00Z"
+prd_path: ".agile/iter-20260506-01/prd.md"
+builder_count: 2
+tester_count: 1
 active_objective: "Add user authentication to the API."
 acceptance_criteria:
   - id: "AC-1"
@@ -24,7 +28,7 @@ slice_board:
     summary: "Implement login endpoint"
     owner: "builder"
     status: "in_progress"
-    files: ["src/auth/login.py"]
+    files: ["src/auth/login.py", "src/models/session.py"]
     verification: "Planned"
 decisions:
   - id: "DEC-1"
@@ -34,7 +38,7 @@ risks:
   - id: "RISK-1"
     description: "Rate limiting not yet implemented on auth endpoints"
     severity: "medium"
-next_resume_prompt: "Read current-iteration.md and continue with $agile-multi-agent-delivery. Finish SL-02 login endpoint, then add rate limiting as a separate slice."
+next_resume_prompt: "Run scripts/current-state.sh to find the active state file, read it, then continue with $agile-multi-agent-delivery. Current phase: BUILDING. Finish SL-02 login endpoint, then run integration check before spawning Tester agents."
 ---
 
 # Current Iteration State
@@ -44,7 +48,7 @@ next_resume_prompt: "Read current-iteration.md and continue with $agile-multi-ag
 - Product: auth-service
 - Branch: feature/user-auth
 - Last Updated: 2026-05-06 10:00 UTC
-- Delivery Skill: agile-multi-agent-delivery
+- Delivery Skill: agile-multi-agent-delivery v2.0
 - Repository Rules Loaded: yes
 - State Ledger Version: v1
 
