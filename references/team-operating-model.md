@@ -47,7 +47,7 @@ Constraints:
 
 ### ProductOwner (explorer, REQUIREMENTS phases)
 
-Deliverables: `docs/prd-{iter}.md` in PRD template format.
+Deliverables: `.agile/{iter}/prd.md` in PRD template format.
 
 Responsibilities:
 - Read the user request and minimal repo context

@@ -2,21 +2,21 @@
   "hooks": {
     "preCommit": [
       {
-        "matcher": "current-iteration\\.md",
-        "hook": "bash ./scripts/validate-state.sh current-iteration.md"
+        "matcher": "\\.agile/iter-.*/state\\.md",
+        "hook": "bash ./scripts/validate-state.sh \"$MATCHED_FILE\""
       },
       {
-        "matcher": "docs/prd-.*\\.md",
+        "matcher": "\\.agile/iter-.*/prd\\.md",
         "hook": "bash ./scripts/validate-prd.sh \"$MATCHED_FILE\""
       }
     ],
     "postToolUse": [
       {
-        "matcher": "current-iteration\\.md",
+        "matcher": "\\.agile/iter-.*/state\\.md",
         "hook": "echo '[hook] state file modified — consider running validate-state.sh to confirm integrity'"
       },
       {
-        "matcher": "docs/prd-.*\\.md",
+        "matcher": "\\.agile/iter-.*/prd\\.md",
         "hook": "echo '[hook] PRD file modified — consider running validate-prd.sh to confirm integrity'"
       }
     ]

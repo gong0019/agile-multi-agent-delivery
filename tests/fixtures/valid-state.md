@@ -1,5 +1,5 @@
 ---
-skill_version: "2.0.0"
+skill_version: "2.1.0"
 phase: "BUILDING"
 product_version: "v0.1.0"
 iteration_version: "iter-20260506-01"
@@ -48,7 +48,7 @@ next_resume_prompt: "Run scripts/current-state.sh to find the active state file,
 - Product: auth-service
 - Branch: feature/user-auth
 - Last Updated: 2026-05-06 10:00 UTC
-- Delivery Skill: agile-multi-agent-delivery v2.0
+- Delivery Skill: agile-multi-agent-delivery v2.1
 - Repository Rules Loaded: yes
 - State Ledger Version: v1
 

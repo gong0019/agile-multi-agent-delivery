@@ -175,7 +175,7 @@ CSI-3: db-schema — SL-01 (provider) → SL-02 (consumer) — users table
 
 ### Step 10: Produce Contract Specs for Every CSI
 
-For each CSI identified in Step 8, produce a precise Contract Spec. Use the type-specific templates in `references/csi-guide.md`.
+For each CSI identified in Step 9, produce a precise Contract Spec. Use the type-specific templates in `references/csi-guide.md`.
 
 Each Contract Spec must be self-contained and precise enough that two independent Builders who only read the contract spec (and not each other's code) will produce compatible implementations.
 

@@ -1,6 +1,6 @@
 ---
 name: agile-multi-agent-delivery
-version: "2.0.0"
+version: "2.1.0"
 description: |
   Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: two requirement agents (ProductOwner + Challenger) in parallel, one ProjectManager that decomposes work into bounded slices, N Builder agents that implement in parallel with strictly disjoint file ownership, an integration check gate, and M Tester agents. Every phase produces a validated artifact. The state file survives context resets.
 ---

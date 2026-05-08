@@ -1,7 +1,7 @@
 interface:
   display_name: "Agile Multi Agent Delivery"
   short_description: "Run work like a compact dev team"
-  default_prompt: "Use $agile-multi-agent-delivery to turn this request into a confirmed iteration, delegate safe parallel work, and keep `current-iteration.md` in the repository root updated."
+  default_prompt: "Use $agile-multi-agent-delivery to turn this request into a confirmed iteration, delegate safe parallel work, and keep iteration state files under `.agile/` updated."
 
 policy:
   allow_implicit_invocation: true

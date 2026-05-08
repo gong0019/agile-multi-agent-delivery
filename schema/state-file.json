@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Agile Multi Agent Delivery State File",
-  "description": "Schema for the YAML frontmatter of .agile/{iter-id}/state.md (v2.0). The Markdown body after the frontmatter is human-readable and not validated by this schema.",
+  "description": "Schema for the YAML frontmatter of .agile/{iter-id}/state.md (v2.1). The Markdown body after the frontmatter is human-readable and not validated by this schema.",
   "type": "object",
   "required": [
     "skill_version",
@@ -70,7 +70,7 @@
     },
     "prd_path": {
       "type": "string",
-      "description": "Relative path to the PRD document produced in REQUIREMENTS phase, e.g. docs/prd-iter-20260506-01.md"
+      "description": "Relative path to the PRD document produced in REQUIREMENTS phase, e.g. .agile/iter-20260506-01/prd.md"
     },
     "builder_count": {
       "type": "integer",

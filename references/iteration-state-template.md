@@ -1,5 +1,5 @@
 ---
-skill_version: "2.0.0"
+skill_version: "2.1.0"
 phase: "INIT"
 product_version: "v0.1.0"
 iteration_version: "iter-20260506-01"
@@ -35,7 +35,7 @@ This file is the single source of truth for the current iteration. The YAML fron
 - Product: `[product-or-repo-name]`
 - Branch: `[branch-name]`
 - Last Updated: `[YYYY-MM-DD HH:mm TZ]`
-- Delivery Skill: `agile-multi-agent-delivery v2.0`
+- Delivery Skill: `agile-multi-agent-delivery v2.1`
 - Repository Rules Loaded: `yes/no`
 - State Ledger Version: `v1`
 
@@ -57,7 +57,7 @@ This file is the single source of truth for the current iteration. The YAML fron
 
 ## PRD Reference
 
-- PRD Path: `[docs/prd-iter-YYYYMMDD-01.md or empty]`
+- PRD Path: `[.agile/iter-YYYYMMDD-01/prd.md or empty]`
 - PRD Status: `[draft / challenged / confirmed]`
 
 ## Confirmed Acceptance Criteria
