@@ -38,7 +38,7 @@ INIT
                               ↳ produces Contract Specs for every CSI
  └→ BUILDING                 N Builder agents (parallel, disjoint file ownership)
  └→ INTEGRATION_CHECK        Orchestrator validates all Builder returns + Contract Compliance
- └→ TESTING                  M Tester agents (parallel)
+ └→ TESTING                  M Tester agents (parallel, 7-dimension protocol per tester-guide.md)
  └→ COMPLETE
 ```
 
@@ -285,14 +285,27 @@ Each Tester covers 2 Builders' output. Assign by feature proximity.
 Tester Task Contract requirements:
 
 - `agent_role`: `tester`
-- `files_allowed`: test files for assigned slices, plus read-only access to source files
+- `files_allowed`: test files for assigned slices, plus read-only access to all source files
 - `files_avoid`: source files (no modifications)
-- `expected_deliverable`: test results, AC-N status per criterion (met / failed / untestable), coverage gaps as RISK-N items
+- `slices_covered`: list of SL-N IDs assigned to this Tester
+- `prd_path`: path to confirmed PRD (for intent alignment verification)
+- `contracts`: list of Contract IDs to verify (from CSI system)
+- `expected_deliverable`: Agent Return per `references/tester-guide.md` — 7-dimension results table, AC-N and RAC-N status, contract verification, all risks
 
-Bugs found by Testers are recorded as `RISK-N` items. Fixing them is a new iteration slice, not part of the current Tester's scope.
+The Tester executes **7 testing dimensions** defined in `references/tester-guide.md`:
 
-**Tester regression mandate** (brownfield only):
-- For every EF item tagged `preserve` or `modify` in the PRD: include at least one test.
+1. **Impact Radius Analysis** — trace changed code's dependents; smoke-verify code outside the slice
+2. **Full Regression Sweep** — run the full test suite; identify unexpected failures outside assigned slices
+3. **Logic Consistency Check** — verify all states reachable, all operations closed, ACs mutually consistent, edge cases handled
+4. **Contextual Coherence Analysis** — static review: does the change fit its surrounding code patterns and implicit contracts with callers?
+5. **Frontend–Backend Data Flow Verification** — parameter correctness trace, response handling trace, business intent alignment against PRD
+6. **UX Quality Review** — empty/loading/error/success states, interaction quality, visual consistency, accessibility basics (UI slices only)
+7. **Exploratory Testing** — time-boxed session targeting boundary inputs, unexpected sequences, interruption recovery
+
+Bugs and deviations found by Testers are recorded as `RISK-N` items with severity. Fixing them is a new iteration slice, not part of the current Tester's scope.
+
+**Regression mandate** (brownfield only):
+- For every EF item tagged `preserve` or `modify` in the PRD: include at least one test (Dimension 2 + 3).
 - Regression ACs (tagged `[REGRESSION]`) are first-class — failure blocks the TESTING phase.
 - Untested regression ACs must be reported as `RISK-N: regression-coverage-gap-EF-[N]`, not silently skipped.
 

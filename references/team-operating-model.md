@@ -117,21 +117,27 @@ Constraints:
 
 ### Tester-N (worker, TESTING, spawned in parallel)
 
-Deliverables: test results + coverage gap report + pass/fail per acceptance criterion (AC-N and RAC-N) + contract verification results.
+Deliverables: 7-dimension test report (per `references/tester-guide.md`) + AC-N and RAC-N status + contract verification results + all RISK-N items found.
 
 Responsibilities:
-- Cover the assigned Builders' slices
-- Run unit, integration, or E2E tests as available
-- Verify cross-slice contracts: actual requests against api-* specs, type checker for shared-type, schema introspection for db-schema, event payload validation for event contracts
-- Report AC-N status (met / failed / untestable)
-- **For brownfield**: test every EF item tagged `preserve` or `modify` (Regression ACs, RAC-N). Regression coverage gaps must be reported as `RISK-N: regression-coverage-gap-EF-[N]`, not silently skipped
-- Identify coverage gaps and surface as RISK-N items
+- Execute all 7 testing dimensions from `references/tester-guide.md` for every assigned slice:
+  1. **Impact Radius Analysis**: trace changed code's inbound/outbound references; smoke-verify dependents outside the slice
+  2. **Full Regression Sweep**: run complete test suite; identify unexpected failures; smoke-test adjacent features
+  3. **Logic Consistency Check**: verify state reachability, operation closure, AC mutual consistency, edge cases
+  4. **Contextual Coherence Analysis**: static code review — pattern fit, implicit caller contracts, state/side-effect coherence
+  5. **Frontend–Backend Data Flow Verification**: parameter correctness trace, response handling trace, PRD intent alignment
+  6. **UX Quality Review**: empty/loading/error/success states, interaction quality, visual consistency, accessibility (UI slices only)
+  7. **Exploratory Testing**: time-boxed session on boundary inputs, unexpected sequences, interruption recovery
+- Verify cross-slice contracts per `references/csi-guide.md` verification methods
+- Report AC-N and RAC-N status (met / failed / untestable) with evidence
+- For brownfield: RAC-N items are first-class — failure blocks TESTING just as functional ACs do
 
 Constraints:
-- May only write to test files
-- May not modify source files
-- If a bug is found: report it as RISK-N with severity, do not fix it (fixing is a new iteration slice)
-- Regression ACs (RAC-N) are first-class — failure blocks the TESTING phase just as functional AC failures do
+- Has read-only access to all source files; may only write to test files
+- Must not modify source files under any circumstances
+- If a bug is found: report as RISK-N with severity; do not fix it (fixing is a new iteration slice)
+- Must not skip a dimension without recording the reason in the Agent Return
+- Must not report "pass" for a dimension that was not executed
 
 ### Integrator (worker, optional, INTEGRATION_CHECK)
 
