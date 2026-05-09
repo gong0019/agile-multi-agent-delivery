@@ -172,7 +172,7 @@ iter-20260508-01           COMPLETE                 100%
 │ Challenger      │ explorer       │ 对抗性需求审查 / 绝不直接修改 PRD          │
 │ ProjectManager  │ explorer       │ 拆分切片 + Task Contracts / 绝不写代码     │
 │ Builder-N       │ worker         │ 一个边界明确的实现切片 / 绝不碰合同外文件   │
-│ Tester-N        │ worker         │ 测试分配的切片 / 绝不改非测试文件           │
+│ Tester-N        │ worker         │ 7 维度质量评估 / 绝不改非测试文件           │
 │ Integrator      │ worker（可选） │ 跨切片集成冲突 / 绝不重新实现已完成切片     │
 └─────────────────┴────────────────┴──────────────────────────────────────────┘
 ```
@@ -200,6 +200,37 @@ iter-20260508-01           COMPLETE                 100%
 | `scripts/check-constraints.sh` | 派生 Builder agents 前 |
 
 完整协议见 [SKILL.md](SKILL.md)。
+
+---
+
+## v2.2 关键升级：Brownfield 完整性保护 + 深度测试
+
+### Brownfield 完整性保护
+
+修改现有模块时，原有功能不再会被悄悄丢弃：
+
+| 流水线节点 | 新增保护 |
+| --- | --- |
+| Orchestrator INIT | 区分 greenfield / brownfield；brownfield 先列出**现有功能清单**（EF-N 表） |
+| ProductOwner | PRD 写**完整最终状态**，不是变更描述；每个 EF 项标注 preserve / modify / remove |
+| 用户确认门 | 展示**完整功能状态表**，remove 项需逐条明确确认 |
+| ProjectManager | 新增 Step 0.5：PRD 完整性验证，发现漏洞先返回 Gap Report |
+| Builder | Task Contract 含 `preserve_behaviors`；修改前先审计现有行为；Agent Return 含 Behaviors Preserved |
+| Integration Check | 新增第 5 项：行为回归检查，EF preserve 项必须全部出现在 Builder 报告中 |
+
+### 深度测试协议（Tester）
+
+Tester 从"验收核对员"升级为"质量工程师"，执行 7 个维度：
+
+| 维度 | 核心问题 |
+| --- | --- |
+| 1. 影响范围分析 | 改动波及了哪些没有直接修改但依赖它的代码？ |
+| 2. 全量回归扫描 | 完整测试套件有无意外失败？相邻功能烟雾测试正常吗？ |
+| 3. 逻辑自洽性 | 新功能所有状态可达吗？操作在所有上下文中都闭合吗？ |
+| 4. 上下文融合性 | 改动是否符合周围代码的模式？调用方的隐式假设还成立吗？ |
+| 5. 前端–后端数据流 | 接口参数字段名/类型正确吗？响应处理路径对吗？流程符合 PRD 意图吗？ |
+| 6. UX 质量评估 | 空态/错误态/加载态是否清晰？视觉一致吗？交互符合直觉吗？ |
+| 7. 探索性测试 | 边界输入、意外操作顺序、中断恢复能发现什么？ |
 
 ---
 
@@ -348,7 +379,7 @@ Commit `.agile/` to git to preserve your full delivery history.
 | Challenger | explorer | adversarial PRD review | writes code, modifies PRD directly |
 | ProjectManager | explorer | decomposition plan, Task Contracts | writes code, makes product decisions |
 | Builder-N | worker | one bounded implementation slice | touches files outside its Task Contract |
-| Tester-N | worker | test files for assigned slices | modifies non-test source files |
+| Tester-N | worker | 7-dimension quality audit (impact radius, regression sweep, logic consistency, contextual coherence, frontend–backend flow, UX quality, exploratory) | modifies non-test source files |
 | Integrator | worker (optional) | cross-slice integration conflicts | re-implements already-done slices |
 
 **Builder count rules:**
@@ -374,3 +405,34 @@ Commit `.agile/` to git to preserve your full delivery history.
 | `scripts/check-constraints.sh` | Before spawning Builder agents |
 
 Full protocol: [SKILL.md](SKILL.md)
+
+---
+
+## v2.2 Highlights: Brownfield Protection + Deep Testing
+
+### Brownfield Completeness Protection
+
+When modifying existing modules, existing features can no longer silently disappear:
+
+| Pipeline node | New protection |
+| --- | --- |
+| Orchestrator INIT | Classifies greenfield vs brownfield; brownfield produces **Existing Feature Inventory** (EF-N table) |
+| ProductOwner | PRD describes **complete final state**, not a delta; every EF item tagged preserve / modify / remove |
+| Confirmation gate | Shows **Complete Feature State Table**; `remove` items require explicit per-item user approval |
+| ProjectManager | New Step 0.5: PRD completeness check against codebase; returns Gap Report if behaviors are missing |
+| Builder | Task Contract includes `preserve_behaviors`; must audit full file before editing; reports Behaviors Preserved |
+| Integration Check | New 5th check: behavioral regression — every EF `preserve` item must appear in Builder returns |
+
+### Deep Testing Protocol (Tester)
+
+Tester upgraded from confirmatory auditor to quality engineer — 7 mandatory dimensions:
+
+| Dimension | Core question |
+| --- | --- |
+| 1. Impact Radius | What code outside the slice depends on what was changed? |
+| 2. Regression Sweep | Any unexpected failures in the full test suite? Adjacent features still work? |
+| 3. Logic Consistency | All states reachable? All operations closed across all contexts? |
+| 4. Contextual Coherence | Does the change fit surrounding code patterns? Caller assumptions still valid? |
+| 5. Frontend–Backend Flow | Field names/types correct? Response paths right? Full flow matches PRD intent? |
+| 6. UX Quality | Empty/error/loading states clear? Visually consistent? Interactions intuitive? |
+| 7. Exploratory | Boundary inputs, unexpected sequences, interruption recovery — what surfaces? |
