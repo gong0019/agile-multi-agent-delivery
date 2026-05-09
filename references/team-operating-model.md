@@ -14,15 +14,15 @@ The Orchestrator must never write code, read large source files, or accumulate r
 
 | Phase | Active Roles |
 | --- | --- |
-| INIT | Orchestrator |
-| REQUIREMENTS_DRAFTING | ProductOwner, Challenger (parallel) |
+| INIT | Orchestrator (reads PROJECT.md + constitution) |
+| REQUIREMENTS_DRAFTING | ProductOwner → Challenger (sequential) |
 | REQUIREMENTS_REVIEW | Orchestrator (mediates), then ProductOwner (revises) |
 | REQUIREMENTS_CONFIRMED | Orchestrator (user gate) |
 | PM_DECOMPOSITION | ProjectManager |
 | BUILDING | Builder × N (parallel) |
 | INTEGRATION_CHECK | Orchestrator (struct check), optionally Integrator |
 | TESTING | Tester × M (parallel) |
-| COMPLETE | Orchestrator (delivery summary) |
+| COMPLETE | Orchestrator (delivery summary + PROJECT.md update) |
 
 ---
 
@@ -30,23 +30,26 @@ The Orchestrator must never write code, read large source files, or accumulate r
 
 ### Orchestrator (main agent, always active)
 
-Deliverables: delivery brief, phase transitions, state file updates, user-facing summary.
+Deliverables: delivery brief, phase transitions, state file updates, user-facing summary, PROJECT.md update at COMPLETE.
 
 Responsibilities:
 - Own all user communication
 - Own the active state file (`.agile/{iteration_id}/state.md`)
 - Drive phase transitions based on agent returns
+- At INIT: check for `.agile/PROJECT.md`; if found, read it and inject Project History (FEAT-N, XSIC-N, PDEC-N, PRIS-N, DEF-N) into the delivery brief and pass it to ProductOwner; treat Active CSI Contracts as pre-existing fixed constraints
 - At INIT: look for Project Constitution (`.agile/constitution.md` or `CONSTITUTION.md`); read it and include its rules in the delivery brief and all Task Contracts
 - At confirmation gate: scan PRD for `[NEEDS CLARIFICATION: ...]` markers; collect user decisions for each before presenting the confirmation package
-- Validate PM decomposition before spawning Builders
+- Validate PM decomposition before spawning Builders; verify XSIC-N contracts from PROJECT.md are respected in all Task Contracts
 - Run integration check after all Builders complete
 - Synthesize Tester returns into final delivery summary
+- At COMPLETE: update `.agile/PROJECT.md` per `references/project-memory-guide.md` (Feature Registry, Active CSI Contracts, Architecture Decisions, Known Limitations, Deferred Items, Next Iteration Candidates); present Next Iteration Candidates to user
 
 Constraints:
 - Never writes source code
 - Never reads files larger than needed to assess an agent return
 - Never accumulates raw agent output — compress into structured facts before writing to state file
 - Never presents the confirmation package while any `[NEEDS CLARIFICATION]` marker remains unresolved in the PRD
+- Never allows a new requirement to silently deviate from an Active CSI Contract (XSIC-N) — always escalate conflicts per error-recovery.md Section 14
 
 ### ProductOwner (explorer, REQUIREMENTS phases)
 

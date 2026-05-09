@@ -1,8 +1,8 @@
 ---
 name: agile-multi-agent-delivery
-version: "2.2.0"
+version: "2.4.0"
 description: |
-  Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: ProductOwner drafts a complete-state PRD (including brownfield feature inventory), Challenger reviews the completed PRD, one ProjectManager decomposes work into bounded slices with cross-slice contracts, N Builder agents implement in parallel with strictly disjoint file ownership and explicit preservation mandates, an integration check gate (including behavioral regression check), and M Tester agents. Every phase produces a validated artifact. The state file survives context resets.
+  Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: ProductOwner drafts a complete-state PRD (including brownfield feature inventory), Challenger reviews the completed PRD, one ProjectManager decomposes work into bounded slices with cross-slice contracts, N Builder agents implement in parallel with strictly disjoint file ownership and explicit preservation mandates, an integration check gate (including behavioral regression check), and M Tester agents. Every phase produces a validated artifact. The state file survives context resets. A project-level memory file (.agile/PROJECT.md) accumulates cross-iteration knowledge so each new iteration knows what was built before.
 ---
 
 # Agile Multi Agent Delivery
@@ -64,6 +64,8 @@ All skill-generated files live under `.agile/` in the repository root. This keep
 [project-root]/
   .agile/
     CURRENT                        ← one-line text file: active iteration ID
+    PROJECT.md                     ← project-level memory, persists across all iterations
+    constitution.md                ← optional: inviolable project-wide engineering rules
     iter-20260508-01/              ← active iteration
       state.md                     ← machine-validated delivery state
       prd.md                       ← PRD document (created in REQUIREMENTS phase)
@@ -94,6 +96,17 @@ All skill-generated files live under `.agile/` in the repository root. This keep
 ### 1. Build the Delivery Brief (Orchestrator)
 
 Before doing any substantial work:
+
+0. **Read Project Memory** — check for `.agile/PROJECT.md`:
+   - If it exists: read it in full. Extract and carry forward into the delivery brief under a **"Project History"** section:
+     - Current product version (from last completed iteration)
+     - All delivered features (FEAT-N rows) — especially those in the area being changed
+     - Active CSI Contracts (XSIC-N) — must not break without explicit amendment and user approval
+     - Architecture Decisions (PDEC-N) in force — future builders must respect these
+     - Known Limitations (PRIS-N open items) — may be in scope for this iteration
+     - Deferred Items (DEF-N) — candidate input for this iteration's scope
+   - If it does not exist: proceed without cross-iteration context (this is the first iteration).
+   - Pass the full Project History to the ProductOwner in Step 2a. The PO must incorporate Active CSI Contracts and Architecture Decisions into the PRD's Technical Constraints section.
 
 1. Read repository rules already required by the environment.
 1b. Look for a **Project Constitution** — check `.agile/constitution.md`, then `CONSTITUTION.md` in the project root.
@@ -411,7 +424,25 @@ A request is complete only when all of these are true:
 3. all acceptance criteria have a recorded status
 4. verification status is recorded honestly
 5. residual risks are surfaced
-6. the next resume prompt is ready for the next iteration
+6. `.agile/PROJECT.md` is updated with this iteration's results (see steps below)
+7. Next Iteration Candidates are presented to the user
+
+**PROJECT.md update at COMPLETE** (per `references/project-memory-guide.md`):
+
+Before presenting the delivery summary, the Orchestrator must update `.agile/PROJECT.md`. If the file does not exist, create it from the template in `references/project-memory-guide.md`.
+
+Mandatory updates:
+
+- **Feature Registry**: add one row per delivered slice. If a slice modified an existing FEAT-N, update that row's status to `modified`.
+- **Active CSI Contracts**: promote Contract Specs (C-N) that cross feature boundaries or will be consumed by future iterations to XSIC-N entries. Summarize key field names, types, HTTP methods, and response shapes.
+- **Architecture Decisions**: add any iteration-level DEC-N item that encodes a lasting constraint for future builders. Skip ephemeral decisions.
+- **Known Limitations**: add unresolved RISK-N items with severity `high` or `critical` as PRIS-N entries. Mark previously open PRIS-N items as `resolved-in-[iter]` if addressed.
+- **Deferred Items**: add explicitly deferred out-of-scope items as DEF-N entries. Remove DEF-N items addressed in this iteration.
+- **Next Iteration Candidates**: propose 2–4 ranked candidates based on open PRIS-N, high-priority DEF-N, and logical next steps.
+
+After updating PROJECT.md, present the user with:
+1. Delivery summary (what was built, verification status, residual risks)
+2. Next Iteration Candidates table from PROJECT.md — so the user can immediately kick off the next iteration with one line
 
 ### 15. State Validation Cadence
 

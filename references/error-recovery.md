@@ -213,6 +213,38 @@ This is not a bug — it is expected behavior in brownfield projects where PM ca
 
 ---
 
+## 14. Cross-Iteration Interface Incompatibility (PROJECT.md Conflict)
+
+**Trigger:** During INIT, PM_DECOMPOSITION (Step 0.5), or BUILDING, a new requirement conflicts with an Active CSI Contract (XSIC-N) or Architecture Decision (PDEC-N) recorded in `.agile/PROJECT.md`. This includes: a new API endpoint that contradicts a previous API contract shape, a new data model that breaks a cross-iteration shared type, a new architecture pattern that contradicts a recorded PDEC-N, or a Builder discovering at build time that a previous-iteration interface constrains what can be implemented.
+
+**Why this matters:** PROJECT.md represents decisions that were validated across a previous full delivery cycle. Silent deviations create the exact same class of regression that EF-N tracking prevents inside a single iteration — except they span multiple iterations and may break production consumers.
+
+**Recovery:**
+
+1. Record `RISK-N: cross-iteration-conflict-[XSIC-N or PDEC-N] - [new requirement]: conflicts with [existing contract/decision] defined in [source iteration]`.
+2. **Do NOT proceed** past the current phase. Do not ask Builders to work around the conflict silently.
+3. The Orchestrator presents the conflict to the user:
+   ```
+   Cross-iteration conflict detected.
+
+   Existing constraint: XSIC-1 — POST /api/v1/users expects {username, email} → {id, token}
+   Source: iter-20260508-01
+   New requirement: POST /api/v1/users must now accept {username, email, phone}
+
+   Options:
+   A) Amend XSIC-1 to include the `phone` field (backward-compatible addition — low risk)
+   B) Version the API: create v2 endpoint, keep v1 unchanged (higher effort, no consumers broken)
+   C) Constrain the new requirement to avoid this field (simplest, if acceptable)
+   ```
+4. Wait for user decision before proceeding.
+5. Once resolved, record `DEC-N: cross-iteration-amendment - [XSIC-N or PDEC-N]: [decision and rationale]` in the state file.
+6. Update `.agile/PROJECT.md`: amend the XSIC-N or PDEC-N row to reflect the new agreed shape. Note the amendment's iteration and reason.
+7. Pass the amended contract as the authoritative Contract Spec to the PM (if in PM_DECOMPOSITION) or the affected Builders (if in BUILDING) via a targeted follow-up slice.
+
+**Prevention:** The Orchestrator's Step 0 at INIT reads PROJECT.md and injects Active CSI Contracts into the delivery brief. The ProductOwner includes them in Technical Constraints. The PM treats XSIC-N contracts as pre-existing Contract Specs. This chain means most conflicts surface at INIT or PM_DECOMPOSITION, before any code is written.
+
+---
+
 ## 12. Tester Detects Contract Violation
 
 **Trigger:** A Tester's contract verification (actual API requests, type checks, schema introspection) reveals that the implementation does not match the contract spec, even though the Builder reported `compliant`.

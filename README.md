@@ -119,6 +119,8 @@ bash agile-multi-agent-delivery/scripts/setup-project.sh
 your-project/
 ├── .agile/
 │   ├── CURRENT                      ← 一行文本，指向当前活跃迭代 ID
+│   ├── PROJECT.md                   ← 项目记忆（跨迭代持久化）
+│   ├── constitution.md              ← 可选：项目级不可侵犯工程原则
 │   ├── iter-20260508-01/            ← 需求 A（已归档）
 │   │   ├── state.md                 ← 机器可读状态文件（YAML frontmatter）
 │   │   └── prd.md                   ← PRD 文档
@@ -200,6 +202,64 @@ iter-20260508-01           COMPLETE                 100%
 | `scripts/check-constraints.sh` | 派生 Builder agents 前 |
 
 完整协议见 [SKILL.md](SKILL.md)。
+
+---
+
+## v2.4 关键升级：多迭代项目记忆系统
+
+### 问题背景
+
+第一版功能交付完成后，用户隔了几天提出第二版需求，或者 token 重置了重新开始——Orchestrator 没有任何渠道知道第一版建了什么 API 接口、做了哪些架构决策、有哪些遗留风险。结果：Builder 可能破坏了上一版的接口，或者重复实现已有功能，或者完全忽略了上一版留下的技术债。
+
+### 解决方案：`.agile/PROJECT.md`
+
+每次迭代 COMPLETE 时，Orchestrator 自动更新一个**项目级记忆文件**，下一次迭代开始时自动读取。
+
+#### 记录内容
+
+| 分区 | 内容 | 作用 |
+| --- | --- | --- |
+| Feature Registry | 所有已交付功能 (FEAT-N) | 新迭代知道"现在已有什么" |
+| Active CSI Contracts | 跨迭代仍有效的接口合约 (XSIC-N) | 不允许 Builder 悄悄破坏跨迭代接口 |
+| Architecture Decisions | 持续有效的架构决策 (PDEC-N) | 未来 Builder 必须遵守 |
+| Known Limitations | 未解决的高危 RISK-N 项 (PRIS-N) | 作为候选下一版范围 |
+| Deferred Items | 历史迭代明确推迟的功能 (DEF-N) | 方便用户选择纳入下一版 |
+| Next Iteration Candidates | 优先级排序的下一版候选题目 | COMPLETE 时直接展示给用户，一句话触发下一轮 |
+
+#### 工作流程
+
+```
+迭代 N COMPLETE
+       │
+       ▼
+Orchestrator 更新 .agile/PROJECT.md
+  ├─ 追加 FEAT-N（已交付功能）
+  ├─ 追加 XSIC-N（新增跨迭代接口合约）
+  ├─ 追加 PDEC-N（持续有效的架构决策）
+  ├─ 追加 PRIS-N（未解决高危风险）
+  └─ 追加 DEF-N（推迟的功能）
+       │
+       ▼
+向用户展示"下一版候选"列表
+       │
+       ▼
+迭代 N+1 INIT
+       │
+  读取 PROJECT.md → 注入"Project History"到交付简报
+  ├─ PO 在 PRD Technical Constraints 中引用 XSIC-N 合约
+  ├─ PM 把 XSIC-N 视为已存在的 Contract Spec（不可单方面覆盖）
+  └─ Orchestrator 检测新需求与 XSIC-N 是否冲突，冲突时上报用户决策
+```
+
+#### 跨迭代接口保护
+
+Active CSI Contracts（XSIC-N）是跨迭代的"接口宪法"：
+
+- 新迭代 PM 和 Builder **不可单方面偏离** XSIC-N
+- 如果新需求与 XSIC-N 冲突，Orchestrator **必须上报**，用户选择：修改合约、版本化接口、或调整需求
+- 修改 XSIC-N 后，更新 PROJECT.md 并在状态文件记录 DEC-N
+
+完整协议见 `references/project-memory-guide.md`，冲突恢复见 `references/error-recovery.md` Section 14。
 
 ---
 
@@ -407,6 +467,8 @@ All skill-generated files live under `.agile/` — **your project files are neve
 your-project/
 ├── .agile/
 │   ├── CURRENT                    ← one-line file: active iteration ID
+│   ├── PROJECT.md                 ← project memory (persists across all iterations)
+│   ├── constitution.md            ← optional: inviolable project-wide engineering rules
 │   ├── iter-20260508-01/          ← requirement A (archived)
 │   │   ├── state.md               ← machine-readable state (YAML frontmatter)
 │   │   └── prd.md                 ← PRD document
@@ -458,6 +520,45 @@ Commit `.agile/` to git to preserve your full delivery history.
 | `scripts/check-constraints.sh` | Before spawning Builder agents |
 
 Full protocol: [SKILL.md](SKILL.md)
+
+---
+
+## v2.4 Highlights: Multi-Iteration Project Memory
+
+### The Problem
+
+After delivering v1, the user returns days later to request v2 — or a token reset happens and a new thread starts. The Orchestrator has no channel to know what APIs v1 built, what architectural decisions were made, or what risks remain open. Result: Builders may silently break previous-iteration interfaces, re-implement existing features, or ignore accumulated technical debt.
+
+### Solution: `.agile/PROJECT.md`
+
+At the end of every COMPLETE phase, the Orchestrator automatically updates a **project-level memory file**. The next iteration reads it at INIT before drafting the delivery brief.
+
+#### What It Records
+
+| Section | Content | Purpose |
+| --- | --- | --- |
+| Feature Registry | All delivered features (FEAT-N) | New iterations know "what already exists" |
+| Active CSI Contracts | Cross-iteration interface contracts (XSIC-N) | Builders cannot silently break cross-iteration APIs |
+| Architecture Decisions | Lasting technical decisions (PDEC-N) | Future builders must respect these |
+| Known Limitations | Unresolved high-severity risks (PRIS-N) | Candidate scope for next iteration |
+| Deferred Items | Explicitly deferred features (DEF-N) | Easy input for next iteration scope |
+| Next Iteration Candidates | Priority-ranked next topics | Presented to user at COMPLETE — one-line trigger for next round |
+
+#### Cross-Iteration Interface Protection
+
+Active CSI Contracts (XSIC-N) act as a cross-iteration "interface constitution":
+
+- New iteration's PM and Builders may not unilaterally deviate from XSIC-N
+- If a new requirement conflicts with XSIC-N, the Orchestrator **must escalate** — user chooses: amend the contract, version the API, or constrain the requirement
+- Amendments are recorded in PROJECT.md and as DEC-N in the state file
+
+#### Survives Context Resets and Long Gaps
+
+Because PROJECT.md lives in `.agile/` (committed to git), it is available to any new thread or session:
+- Token reset mid-iteration: resume from state file `next_resume_prompt` — PROJECT.md context is already in the brief
+- New iteration months later: Orchestrator reads PROJECT.md at INIT, reconstructs full project history in the delivery brief automatically
+
+Full protocol: `references/project-memory-guide.md`. Conflict recovery: `references/error-recovery.md` Section 14.
 
 ---
 
