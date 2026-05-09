@@ -137,6 +137,25 @@
       "minLength": 1,
       "description": "Decision point or blocker that requires Orchestrator intervention"
     },
+    "preserve_behaviors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ef_id", "description"],
+        "properties": {
+          "ef_id": {
+            "type": "string",
+            "pattern": "^EF-[0-9]+$",
+            "description": "Reference to an Existing Feature Inventory item in the confirmed PRD"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of the existing behavior that must survive this slice unchanged"
+          }
+        }
+      },
+      "description": "Existing behaviors (from PRD Existing Feature Inventory, disposition: preserve or modify) whose source files fall in files_allowed. Builder must confirm each in the Behaviors Preserved section of Agent Return. Empty only for greenfield slices or slices with no EF items in their file scope."
+    },
     "design_constraints": {
       "type": "object",
       "description": "Frontend design constraints. Required when files_allowed includes UI files (pages, components, views, templates, stylesheets).",

@@ -51,17 +51,20 @@ bash agile-multi-agent-delivery/scripts/setup-project.sh
     ┌────────────────────────▼────────────────────────────────┐
     │  REQUIREMENTS_DRAFTING                                   │
     │                                                          │
-    │   ┌──────────────────┐      ┌──────────────────┐        │
-    │   │   ProductOwner   │      │    Challenger     │        │
-    │   │  起草 PRD 文档   │      │   逐条挑战需求    │        │
-    │   └────────┬─────────┘      └────────┬──────────┘        │
-    │            └──────────┬─────────────┘                   │
-    │                  各自独立返回                             │
-    └───────────────────────┼──────────────────────────────────┘
+    │   ┌─────────────────────────────────────────────────┐   │
+    │   │                  ProductOwner                    │   │
+    │   │  审计现有功能 → 起草完整状态 PRD（含 EF 清单）   │   │
+    │   └──────────────────────┬──────────────────────────┘   │
+    │                          │ prd.md 写完后                  │
+    │   ┌──────────────────────▼──────────────────────────┐   │
+    │   │                   Challenger                     │   │
+    │   │   审查完整 PRD · 验证 EF 覆盖 · 对抗性挑战       │   │
+    │   └─────────────────────────────────────────────────┘   │
+    └───────────────────────┬──────────────────────────────────┘
                             │
     ┌───────────────────────▼──────────────────────────────────┐
     │  REQUIREMENTS_REVIEW                                      │
-    │  Orchestrator 汇总分歧 → 生成"异议 vs 立场"对比表         │
+    │  Orchestrator 汇总分歧 → 展示完整功能状态表供用户核查     │
     └───────────────────────┬──────────────────────────────────┘
                             │
               ╔═════════════▼═════════════╗
@@ -72,10 +75,10 @@ bash agile-multi-agent-delivery/scripts/setup-project.sh
     │  PM_DECOMPOSITION                                         │
     │   ┌──────────────────────────────────────────────────┐   │
     │   │                 ProjectManager                    │   │
-    │   │  分析文件影响 → 拆分切片 → 生成 Task Contracts    │   │
+    │   │  PRD 完整性验证 → 拆分切片 → 分配 EF 保留职责    │   │
     │   └──────────────────────────────────────────────────┘   │
     └───────────────────────┬──────────────────────────────────┘
-                            │ check-constraints.sh 校验无文件冲突
+                            │ check-constraints.sh 校验无文件冲突 + EF 全覆盖
     ┌───────────────────────▼──────────────────────────────────┐
     │  BUILDING                                                 │
     │                                                           │
@@ -83,13 +86,13 @@ bash agile-multi-agent-delivery/scripts/setup-project.sh
     │   │ Builder1 │    │ Builder2 │    │ Builder3 │          │
     │   │  SL-01   │    │  SL-02   │    │  SL-03   │          │
     │   └──────────┘    └──────────┘    └──────────┘          │
-    │         文件所有权严格互斥，可安全并行执行                  │
-    └───────────────────────┬──────────────────────────────────┘
-                            │
-    ┌───────────────────────▼──────────────────────────────────┐
+    │    文件所有权严格互斥 · 修改前审计现有行为 · 报告 EF 保留  │
+    └───────────────────┬──────────────────────────────────────┘
+                        │
+    ┌───────────────────▼──────────────────────────────────────┐
     │  INTEGRATION_CHECK                                        │
-    │  Orchestrator 校验所有 Builder 返回，检测意外冲突          │
-    │  有冲突 → 可选派 Integrator Agent 解决                    │
+    │  合约合规交叉验证 + 行为回归检查（EF preserve 全覆盖）     │
+    │  有冲突或回归 → 可选派 Integrator Agent 解决              │
     └───────────────────────┬──────────────────────────────────┘
                             │
     ┌───────────────────────▼──────────────────────────────────┐
@@ -248,17 +251,23 @@ Normal questions, bug fixes, and code explanations work as usual — the agile p
                            │
     ┌──────────────────────▼───────────────────────────────┐
     │  REQUIREMENTS_DRAFTING                                │
-    │   ┌─────────────────┐      ┌─────────────────┐      │
-    │   │  ProductOwner   │      │   Challenger     │      │
-    │   │  drafts PRD     │      │  challenges PRD  │      │
-    │   └────────┬────────┘      └────────┬─────────┘      │
-    │            └──────────┬────────────┘                 │
-    │                 return independently                  │
-    └──────────────────────┼───────────────────────────────┘
+    │   ┌─────────────────────────────────────────────┐   │
+    │   │               ProductOwner                   │   │
+    │   │  audits existing features → drafts complete- │   │
+    │   │  state PRD with Existing Feature Inventory   │   │
+    │   └───────────────────┬─────────────────────────┘   │
+    │                       │ prd.md written                │
+    │   ┌───────────────────▼─────────────────────────┐   │
+    │   │               Challenger                     │   │
+    │   │  reviews full PRD · checks EF coverage ·     │   │
+    │   │  adversarial challenge                        │   │
+    │   └─────────────────────────────────────────────┘   │
+    └──────────────────────┬───────────────────────────────┘
                            │
     ┌──────────────────────▼───────────────────────────────┐
     │  REQUIREMENTS_REVIEW                                  │
-    │  Orchestrator synthesizes divergence → presents table │
+    │  Orchestrator synthesizes divergence →                │
+    │  shows Complete Feature State Table for user review   │
     └──────────────────────┬───────────────────────────────┘
                            │
             ╔══════════════▼══════════════╗
@@ -269,23 +278,26 @@ Normal questions, bug fixes, and code explanations work as usual — the agile p
     │  PM_DECOMPOSITION                                     │
     │   ┌───────────────────────────────────────────────┐  │
     │   │              ProjectManager                    │  │
-    │   │  file impact map → slices → Task Contracts     │  │
+    │   │  PRD completeness check → slices →             │  │
+    │   │  Task Contracts with preserve_behaviors        │  │
     │   └───────────────────────────────────────────────┘  │
     └──────────────────────┬───────────────────────────────┘
-                           │ check-constraints.sh validates no overlap
+                           │ validates no overlap + EF fully assigned
     ┌──────────────────────▼───────────────────────────────┐
     │  BUILDING                                             │
     │   ┌──────────┐   ┌──────────┐   ┌──────────┐        │
     │   │ Builder1 │   │ Builder2 │   │ Builder3 │        │
     │   │  SL-01   │   │  SL-02   │   │  SL-03   │        │
     │   └──────────┘   └──────────┘   └──────────┘        │
-    │       disjoint file ownership → safe parallel work    │
+    │  disjoint ownership · audit before modify ·           │
+    │  report Behaviors Preserved per EF item               │
     └──────────────────────┬───────────────────────────────┘
                            │
     ┌──────────────────────▼───────────────────────────────┐
     │  INTEGRATION_CHECK                                    │
-    │  Orchestrator checks all Builder returns for conflict │
-    │  conflicts → optional Integrator agent                │
+    │  contract compliance + behavioral regression check    │
+    │  (every preserve EF item must appear in returns)      │
+    │  failures → optional Integrator agent                 │
     └──────────────────────┬───────────────────────────────┘
                            │
     ┌──────────────────────▼───────────────────────────────┐

@@ -1,8 +1,8 @@
 ---
 name: agile-multi-agent-delivery
-version: "2.1.0"
+version: "2.2.0"
 description: |
-  Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: two requirement agents (ProductOwner + Challenger) in parallel, one ProjectManager that decomposes work into bounded slices, N Builder agents that implement in parallel with strictly disjoint file ownership, an integration check gate, and M Tester agents. Every phase produces a validated artifact. The state file survives context resets.
+  Run a software task like a disciplined pipeline of independent agents. The main agent acts as a pure Orchestrator — it never writes code. Instead it drives a phase-gated pipeline: ProductOwner drafts a complete-state PRD (including brownfield feature inventory), Challenger reviews the completed PRD, one ProjectManager decomposes work into bounded slices with cross-slice contracts, N Builder agents implement in parallel with strictly disjoint file ownership and explicit preservation mandates, an integration check gate (including behavioral regression check), and M Tester agents. Every phase produces a validated artifact. The state file survives context resets.
 ---
 
 # Agile Multi Agent Delivery
@@ -30,7 +30,7 @@ This skill is not for:
 
 ```
 INIT
- └→ REQUIREMENTS_DRAFTING    ProductOwner + Challenger (parallel, independent)
+ └→ REQUIREMENTS_DRAFTING    ProductOwner (drafts complete-state PRD) → Challenger (reviews completed PRD)
  └→ REQUIREMENTS_REVIEW      Orchestrator mediates divergence → user confirms
  └→ REQUIREMENTS_CONFIRMED   PRD locked
  └→ PM_DECOMPOSITION         ProjectManager decomposes PRD into bounded slices
@@ -96,7 +96,15 @@ All skill-generated files live under `.agile/` in the repository root. This keep
 Before doing any substantial work:
 
 1. Read repository rules already required by the environment.
-2. Inspect only the minimal code and docs needed to understand the request.
+2. Classify the request and read accordingly:
+   - **greenfield** (new module, page, or feature with zero existing code in that area): inspect minimal code and docs needed to understand the request.
+   - **brownfield** (modifying an existing module, page, or feature): read all files in the affected module to enumerate every existing behavior. Before drafting the brief, produce an **Existing Feature Inventory**:
+
+     | EF-ID | Feature | Current Behavior | Disposition |
+     | --- | --- | --- | --- |
+
+     Disposition values: `preserve` / `modify` / `remove`. Any `remove` item requires explicit user approval at the confirmation gate. Include this table in the delivery brief — it is the source of truth for the ProductOwner.
+
 3. Rewrite the request into a concrete delivery brief:
    - target outcome
    - business reason or user value
@@ -108,22 +116,46 @@ Before doing any substantial work:
 
 Do not ask a long list of questions. Infer aggressively. Ask only for details that would change the outcome or create material risk.
 
-### 2. Spawn Requirements Agents (parallel)
+### 2. Spawn Requirements Agents (sequential)
 
-After forming an initial understanding, spawn ProductOwner and Challenger in the same turn:
+#### Step 2a: Spawn ProductOwner
 
-- **ProductOwner**: Write `.agile/{iter}/prd.md` using `references/prd-template.md`. Include user stories, functional requirements (with AC-N IDs), non-functional requirements, out-of-scope items, and open questions.
+Spawn the ProductOwner agent. Provide: the delivery brief and, for brownfield changes, the full Existing Feature Inventory table.
 
-- **Challenger**: Read the PRD draft and produce a challenge report: missing edge cases, ambiguous acceptance criteria, hidden assumptions, scope creep risks.
+- **ProductOwner**: Write `.agile/{iter}/prd.md` using `references/prd-template.md`.
+  - The PRD must describe the **complete final state** of the feature, not just the changes (never a delta description).
+  - For brownfield: every item in the Existing Feature Inventory must appear in Functional Requirements with an explicit disposition tag: `[PRESERVE]`, `[MODIFY]`, or `[REMOVE]`.
+  - Acceptance Criteria must include regression ACs (tagged `[REGRESSION]`) for every EF item tagged `preserve` or `modify`.
+  - Must not omit any item from the Existing Feature Inventory.
 
-Both agents work independently. They do not communicate with each other.
+Wait for the ProductOwner to complete and confirm `prd.md` is written before proceeding to Step 2b.
+
+#### Step 2b: Spawn Challenger
+
+After `prd.md` is written, spawn the Challenger agent with the completed PRD path.
+
+- **Challenger**: Read `.agile/{iter}/prd.md` and produce a challenge report:
+  - Missing edge cases, ambiguous acceptance criteria, hidden assumptions, scope creep risks.
+  - **Preservation review**: verify that every item in the Existing Feature Inventory appears in the PRD. Flag any EF item absent from the PRD as a hard coverage gap.
+  - Flag any `remove` disposition that has no explicit justification.
+
+The Challenger reviews the actual completed PRD, not just the delivery brief. The two agents do not communicate directly — all exchange goes through the Orchestrator.
 
 ### 3. Requirements Review and Confirmation Gate
 
 The Orchestrator collects both returns and:
 
 1. Compiles a divergence table (objection vs. ProductOwner position).
-2. Presents one compact confirmation package to the user: the PRD summary, the divergence table, and a recommended resolution for each objection.
+2. Presents one compact confirmation package to the user:
+   - PRD summary (new and changed features)
+   - Divergence table with recommended resolution for each objection
+   - **Complete Feature State Table** (brownfield only) — every existing feature with its final disposition:
+
+     | Feature | Before | After | Disposition |
+     | --- | --- | --- | --- |
+
+     This table lets the user verify that nothing is silently removed.
+   - Any `remove` items called out explicitly: "The following existing features will be **REMOVED**. Please confirm each."
 3. After user confirms: ProductOwner produces the final PRD (prd_version incremented, status: confirmed). Run `scripts/validate-prd.sh` on the final PRD.
 4. Update state file: `phase: REQUIREMENTS_CONFIRMED`, `prd_path: .agile/{iter}/prd.md`.
 
@@ -160,6 +192,8 @@ Use stable IDs: `AC-N`, `DEC-N`, `SL-N`, `RISK-N`, `TASK-N`.
 
 ### 5. ProjectManager Decomposition
 
+**For brownfield changes**, the ProjectManager must execute Step 0.5 (PRD Completeness Check) from `references/pm-decomposition-guide.md` before decomposing. If the PM returns a PRD Gap Report, resolve all gaps — adding items to the Existing Feature Inventory or explicitly recording them as out-of-scope (DEC-N) — before proceeding.
+
 Spawn one ProjectManager agent. Provide:
 
 - the confirmed PRD path
@@ -180,6 +214,7 @@ Before spawning Builder agents, the Orchestrator validates:
 - run `scripts/check-constraints.sh` which checks Constraint 7 (no two slices share a file in BUILDING phase)
 - verify every Contract ID referenced in a Task Contract has a corresponding Contract Spec
 - verify every CSI has both a provider and at least one consumer bound to it
+- verify every EF item tagged `preserve` in the PRD appears in at least one Builder's `preserve_behaviors` list; if any is unassigned, return the plan to the ProjectManager for correction
 - if conflicts or missing contracts found: return the plan to the ProjectManager for re-decomposition
 
 Update state file: `phase: BUILDING`, `builder_count: N`, `tester_count: M`.
@@ -213,6 +248,15 @@ Builder Task Contract requirements:
 - `stop_when`: all owned files implemented and verified
 - `escalate_if`: any required change is outside `files_allowed`
 
+**Builder pre-modification mandate**: Before editing any file in `files_allowed`, the Builder must:
+1. Read the full file and list all existing behaviors found.
+2. Confirm every behavior in the `preserve_behaviors` Task Contract field survives the implementation.
+3. If a PRD-preserved behavior would be lost by the required changes: escalate immediately under `Needs Orchestrator Decision`. Do not remove it.
+
+Builder Agent Return must include two additional fields:
+- `Behaviors Preserved`: list of EF-N items (from `preserve_behaviors`) confirmed intact, with one-line evidence each.
+- `Behaviors Removed`: list of EF-N items explicitly tagged `remove` in the PRD, with reference to the user's approval in the Approval Record. Must be empty if no `remove` dispositions were assigned to this slice.
+
 While Builders run, the Orchestrator updates the state file phase log and prepares the integration check criteria. Do not wait idly.
 
 **Contract amendment during build**: Builders cannot communicate with each other mid-build. If a Builder discovers a contract issue, it marks the contract as `partial` or `blocked` in the Agent Return and describes the problem under `Needs Orchestrator Decision`. The Orchestrator resolves all contract escalations during Integration Check — see `references/error-recovery.md` Section 10-b for the full amendment loop.
@@ -225,6 +269,8 @@ After all Builders return, the Orchestrator performs a structured check — base
 2. Check for any `RISK` items with severity `high` or `critical`.
 3. Check that all slices report a `Validation Performed` entry.
 4. Check Contract Compliance: every Builder bound to a contract must report compliance status. Cross-check provider and consumer reports for the same contract — if they disagree, flag as `RISK-N: contract-drift`.
+
+5. **Behavioral Regression Check** (brownfield only): cross-reference the PRD's Existing Feature Inventory (`preserve` and `modify` items) against all Builder returns' `Behaviors Preserved` lists. Every EF item tagged `preserve` must appear in at least one Builder's `Behaviors Preserved`. Any EF item with no corresponding entry → `RISK-N: behavioral-regression-EF-[N]`. Do not proceed to TESTING if any behavioral-regression risk is unresolved.
 
 **If check passes**: update state file to `phase: TESTING`, spawn Tester agents.
 
@@ -244,6 +290,11 @@ Tester Task Contract requirements:
 - `expected_deliverable`: test results, AC-N status per criterion (met / failed / untestable), coverage gaps as RISK-N items
 
 Bugs found by Testers are recorded as `RISK-N` items. Fixing them is a new iteration slice, not part of the current Tester's scope.
+
+**Tester regression mandate** (brownfield only):
+- For every EF item tagged `preserve` or `modify` in the PRD: include at least one test.
+- Regression ACs (tagged `[REGRESSION]`) are first-class — failure blocks the TESTING phase.
+- Untested regression ACs must be reported as `RISK-N: regression-coverage-gap-EF-[N]`, not silently skipped.
 
 ### 9. Cross-Slice Interface (CSI) Contract System
 

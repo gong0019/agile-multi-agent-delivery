@@ -196,6 +196,23 @@ This is not a bug — it is expected behavior in brownfield projects where PM ca
 
 ---
 
+## 13. PM Returns a PRD Gap Report
+
+**Trigger:** During PM_DECOMPOSITION Step 0.5, PM finds existing behaviors in the codebase that are absent from the PRD's Existing Feature Inventory.
+
+**Recovery:**
+
+1. Record `RISK-N: prd-coverage-gap - [feature]: found in [file], not in PRD Inventory`.
+2. The Orchestrator does NOT proceed to decomposition.
+3. For each gap, the Orchestrator makes a disposition decision:
+   - If the gap is clearly within the scope of the user's request: add it to the PRD Inventory as `preserve`. No user re-confirmation needed if the disposition is obviously preservation.
+   - If the gap's disposition is unclear: present it to the user with a recommended disposition and wait for a decision.
+   - If the gap is explicitly out of scope: record `DEC-N: out-of-scope - [feature] - [rationale]` and do not add it to the Inventory.
+4. Once all gaps are resolved, PM proceeds with decomposition against the updated Inventory.
+5. Do not skip this step to save time — a gap caught here is 10× cheaper to fix than a regression discovered in TESTING.
+
+---
+
 ## 12. Tester Detects Contract Violation
 
 **Trigger:** A Tester's contract verification (actual API requests, type checks, schema introspection) reveals that the implementation does not match the contract spec, even though the Builder reported `compliant`.

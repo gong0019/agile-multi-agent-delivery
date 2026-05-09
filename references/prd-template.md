@@ -21,14 +21,43 @@ Describe the problem being solved or the opportunity being captured. One to thre
 - `US-1` As a `[role]`, I want to `[action]` so that `[outcome]`.
 - `US-2` As a `[role]`, I want to `[action]` so that `[outcome]`.
 
+## Existing Feature Inventory
+
+> Required for brownfield changes (modifying an existing module, page, or feature).
+> Skip only for fully greenfield work (new module, zero existing code in that area).
+> Source: Orchestrator's pre-drafting audit of the affected module(s).
+> Every item in this table must appear in Functional Requirements with an explicit disposition tag.
+
+| ID | Feature | Current Behavior | Disposition | Notes |
+| --- | --- | --- | --- | --- |
+| EF-1 | `[feature name]` | `[what it does today]` | `preserve` | |
+| EF-2 | `[feature name]` | `[what it does today]` | `modify → [new behavior]` | |
+| EF-3 | `[feature name]` | `[what it does today]` | `remove` | Requires explicit user approval |
+
+Disposition values:
+- `preserve` — must survive this iteration unchanged; Builder must confirm in `Behaviors Preserved`
+- `modify` — will change; new behavior described in Functional Requirements
+- `remove` — will be deleted; must be explicitly approved by user at the confirmation gate
+
 ## Functional Requirements
 
 Each requirement maps to one or more acceptance criteria in the state file.
+For brownfield: preserved behaviors appear as `[PRESERVE]` rows; modified behaviors as `[MODIFY]` rows.
 
-| ID | Requirement | AC Reference | Priority |
+| ID | Requirement | AC Reference | Priority | Disposition |
+| --- | --- | --- | --- | --- |
+| FR-1 | `[description of new behavior]` | AC-1 | Must | new |
+| FR-2 | `[existing feature preserved as-is]` | RAC-1 | Must | `[PRESERVE]` EF-1 |
+| FR-3 | `[existing feature changed]` | AC-2, RAC-2 | Must | `[MODIFY]` EF-2 |
+
+## Regression Acceptance Criteria
+
+> Generated from EF items tagged `preserve` or `modify`. Each must be validated by Testers.
+> Omit this section for greenfield projects only.
+
+| ID | Criterion | Source EF | Priority |
 | --- | --- | --- | --- |
-| FR-1 | `[description]` | AC-1 | Must |
-| FR-2 | `[description]` | AC-2 | Should |
+| RAC-1 | `[existing feature] continues to work after this change` | EF-N | Must |
 
 ## Non-Functional Requirements
 

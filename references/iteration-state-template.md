@@ -1,5 +1,5 @@
 ---
-skill_version: "2.1.0"
+skill_version: "2.2.0"
 phase: "INIT"
 product_version: "v0.1.0"
 iteration_version: "iter-20260506-01"
@@ -35,7 +35,7 @@ This file is the single source of truth for the current iteration. The YAML fron
 - Product: `[product-or-repo-name]`
 - Branch: `[branch-name]`
 - Last Updated: `[YYYY-MM-DD HH:mm TZ]`
-- Delivery Skill: `agile-multi-agent-delivery v2.1`
+- Delivery Skill: `agile-multi-agent-delivery v2.2`
 - Repository Rules Loaded: `yes/no`
 - State Ledger Version: `v1`
 
@@ -77,6 +77,17 @@ This file is the single source of truth for the current iteration. The YAML fron
 | Contract ID | Type | Provider | Consumers | Spec Summary | Status |
 | --- | --- | --- | --- | --- | --- |
 | C-1 | `[api-rest / shared-type / db-schema / event / behavioral / operational]` | `SL-XX` | `SL-YY` | `[one-line]` | `specified / drift / resolved` |
+
+## Regression Board
+
+> Tracks preservation of existing features through the build. Populated from the PRD's Existing Feature Inventory.
+> Omit for greenfield iterations.
+
+| EF-ID | Feature | Disposition | Assigned To | Status |
+| --- | --- | --- | --- | --- |
+| EF-1 | `[feature]` | `preserve` | `SL-XX` | `pending` |
+
+Status values: `pending` / `confirmed` (Builder reported preserved in Agent Return) / `regressed` (Integration Check or Tester found it missing or broken)
 
 ## Slice Board
 
@@ -126,6 +137,7 @@ Status values: `todo` / `in_progress` / `blocked` / `done` / `deferred`
 - Out of Scope: `[forbidden work]`
 - Files/Paths Allowed: `[paths]`
 - Files/Paths Avoid: `[paths]`
+- Preserve Behaviors: `[EF-N: description — brownfield Builder only]`
 - Must Respect: `[contracts, constraints, rules]`
 - Expected Deliverable: `[what the subagent must return in Agent Return format]`
 - Stop When: `[clear finish line]`
@@ -138,6 +150,8 @@ Status values: `todo` / `in_progress` / `blocked` / `done` / `deferred`
 - Files Inspected: `[paths]`
 - Files Changed or Proposed: `[paths]`
 - Key Findings or Changes: `[compressed facts, not raw output]`
+- Behaviors Preserved: `[EF-N: one-line evidence — brownfield Builder only]`
+- Behaviors Removed: `[EF-N: reference to PRD remove approval — empty if none assigned]`
 - Risks: `[RISK-N: description]`
 - Validation Performed: `[what was run]`
 - Needs Orchestrator Decision: `[yes/no + reason]`

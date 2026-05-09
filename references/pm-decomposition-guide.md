@@ -16,6 +16,39 @@ The ProjectManager:
 
 ## Step-by-Step Decomposition Process
 
+### Step 0.5: PRD Completeness Check (brownfield only)
+
+**Skip this step for greenfield projects (new module, zero existing code).**
+
+Before reading the file tree or building the impact map, validate that the PRD's Existing Feature Inventory covers all existing functionality in the affected area.
+
+1. Read the PRD's `Existing Feature Inventory` table.
+2. Read the files most likely in the impact area (inferred from the PRD's scope description and module names).
+3. For each existing behavior found in code, check whether it appears in the Inventory.
+4. If any existing behavior is absent from the Inventory: record it as a gap.
+
+If gaps are found, return a **PRD Gap Report** to the Orchestrator before decomposing. Do NOT proceed to decomposition with an incomplete Existing Feature Inventory.
+
+PRD Gap Report format:
+
+```
+## PRD Gap Report
+
+| Gap | Found In File | Recommended Disposition |
+| --- | --- | --- |
+| Avatar upload | src/settings/avatar.ts | preserve |
+| Dark mode toggle | src/settings/theme.ts | preserve |
+```
+
+The Orchestrator will resolve each gap by either:
+- Adding it to the PRD's Existing Feature Inventory as `preserve` (no user re-confirmation needed if disposition is obviously preserve), or
+- Presenting the gap to the user when disposition is unclear, or
+- Explicitly marking it out-of-scope and recording `DEC-N: out-of-scope - [feature] - [rationale]`
+
+Once all gaps are resolved, proceed with decomposition against the updated Inventory.
+
+**Do not skip this step to save time** — a gap caught here is 10× cheaper to fix than a regression discovered in TESTING.
+
 ### Step 1: Read the file tree first
 
 Before opening any file, run a full directory listing. Understand the top-level module structure. Identify:
@@ -221,6 +254,7 @@ Each Builder Task Contract must include:
 - `expected_deliverable`: Agent Return with changed files, verification notes, risks, and Contract Compliance table
 - `stop_when`: "all files in `files_allowed` are implemented and verified"
 - `escalate_if`: "any required change falls outside `files_allowed`"
+- `preserve_behaviors`: list of EF-N items (from the PRD's Existing Feature Inventory tagged `preserve` or `modify`) whose source files fall within this slice's `files_allowed`. The Builder must confirm each survives in the Agent Return. Leave empty only for greenfield slices or slices with zero EF items in their file scope.
 
 ## Frontend Design Constraints
 
