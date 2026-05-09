@@ -80,8 +80,18 @@ Beyond the test suite, manually verify 2–3 key user flows in features adjacent
 
 Verify that the new or modified feature is internally self-consistent — not just that individual ACs pass, but that the feature works coherently across all states, paths, and edge cases.
 
+**How to read Given/When/Then ACs:**
+
+Each AC in the PRD is written in Given/When/Then format. Map directly to test structure:
+- **Given** → test setup / precondition
+- **When** → test action
+- **Then** → assertion
+
+Edge cases listed under an AC are additional test cases for the same criterion. Each must be verified independently.
+
 **Checklist:**
 
+- **Then-clause coverage**: for every AC, verify each "Then" assertion holds. For every listed edge case, verify the specified behavior.
 - **State reachability**: can every documented state of the feature be reached through normal user actions? (e.g., if a grouped view has an "empty group" state, can you actually reach it? What does it show?)
 - **Operation closure**: for every action the user can take (create, edit, delete, sort, filter), does it work in every context the feature supports? (e.g., if items can be edited, can they be edited in every group, not just the first one?)
 - **AC mutual consistency**: do the acceptance criteria contradict each other? (e.g., AC-1 says "groups are collapsible" but AC-3 says "all items always visible" — these cannot both be true)
@@ -99,6 +109,15 @@ Verify that the changes integrate correctly into their surrounding codebase cont
 This is a **static analysis + code review** step, not a test execution step.
 
 **What to check:**
+
+#### Project Constitution Compliance
+If a Project Constitution was read at INIT, verify the changed code complies with its rules:
+- API response shape follows the constitution's envelope format
+- Database field types follow the constitution's conventions
+- No prohibited patterns (e.g., hardcoded secrets, `any` types, mock test databases)
+- Dependency policy respected (no new dependencies without approval)
+
+Report constitution violations as `RISK-N: constitution-violation - Article [N]: [rule violated] in [file]`. These are not style issues — they are hard constraints.
 
 #### Code Pattern Consistency
 - Does the changed code follow the same patterns as neighboring code in the same file? (naming conventions, error handling approach, return type conventions)
@@ -206,6 +225,14 @@ This is a qualitative review, not a test execution. The Tester reads the fronten
 - Does the new UI use the same CSS framework, component library, and design tokens as the rest of the project? (Reference: the Design Constraints block from the Builder's Task Contract)
 - Are spacing, typography, and color usage consistent with adjacent pages?
 - Does the layout work at the breakpoints the project supports (mobile, tablet, desktop)?
+
+#### Success Criteria Alignment
+If the PRD includes a Success Criteria section, evaluate the implementation against each SC:
+- Does the feature feel fast enough to meet the performance target?
+- Does the UX flow support the target completion rate?
+- Are there friction points likely to cause the issues the success criteria aim to prevent?
+
+Record subjective assessment as evidence: "SC-1 (load time < 800ms): observed ~[N]ms — [meets / at risk / fails]."
 
 #### Accessibility Basics
 - Do interactive elements have accessible labels (aria-label, title, or visible text)?

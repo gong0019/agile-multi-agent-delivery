@@ -203,6 +203,59 @@ iter-20260508-01           COMPLETE                 100%
 
 ---
 
+## v2.3 关键升级：可执行规格系统
+
+### Project Constitution（项目宪法）
+
+在项目根目录放 `.agile/constitution.md` 或 `CONSTITUTION.md`，定义整个项目不可侵犯的工程原则：
+
+```markdown
+## Article I: API 规范
+- 所有 HTTP 响应使用标准 envelope：{ data, error }
+- 错误码为 SCREAMING_SNAKE_CASE 字符串，不用数字
+
+## Article II: 数据层
+- 所有时间戳用 timestamptz，不用 timestamp
+- 不得硬删除用户数据
+
+## Article III: 测试要求
+- 实现代码之前必须先写会 FAIL 的单元测试
+- 禁止 mock 数据库，必须用真实测试数据库
+```
+
+Orchestrator 在 INIT 时读取宪法，将规则注入所有 Task Contract 的 `must_respect` 字段——**一次定义，全局生效，所有 Agent 自动遵守**。
+
+完整模板见 `references/constitution-guide.md`。
+
+### `[NEEDS CLARIFICATION]` 强制澄清机制
+
+PRD 中任何不确定的需求，PO 必须标注 `[NEEDS CLARIFICATION: <问题>]` 而不是自行猜测：
+
+```
+| FR-2 | [NEEDS CLARIFICATION: 这个限制是否也适用于管理员？] | AC-2 | Must |
+```
+
+Orchestrator 在用户确认门会列出所有未解决的标记，**确认包不得在有未解决标记时呈现**。用户决策后，PO 替换为具体规格。
+
+### Given/When/Then 验收标准
+
+所有 AC-N 和 RAC-N 改用精确的三段式格式：
+
+```
+AC-1 — 头像上传
+Given  用户在设置页且已登录
+When   用户点击"上传头像"并选择一个 5MB 以内的 JPEG 文件
+Then   头像立即更新，旧头像被替换，显示"上传成功"提示
+
+Edge cases:
+- 文件 > 5MB: 显示"文件过大，最大 5MB"
+- 非 JPEG/PNG: 显示"仅支持 JPEG 和 PNG 格式"
+```
+
+"Then" 子句是 Tester 的直接测试断言，Edge cases 是额外测试用例——不再需要猜"这个 AC 到底测什么"。
+
+---
+
 ## v2.2 关键升级：Brownfield 完整性保护 + 深度测试
 
 ### Brownfield 完整性保护
@@ -405,6 +458,55 @@ Commit `.agile/` to git to preserve your full delivery history.
 | `scripts/check-constraints.sh` | Before spawning Builder agents |
 
 Full protocol: [SKILL.md](SKILL.md)
+
+---
+
+## v2.3 Highlights: Executable Specification System
+
+### Project Constitution
+
+Place `.agile/constitution.md` or `CONSTITUTION.md` in the project root. Define inviolable engineering principles for the entire project:
+
+```markdown
+## Article I: API Conventions
+- All HTTP responses use standard envelope: { data, error }
+- Error codes are SCREAMING_SNAKE_CASE strings, never numeric
+
+## Article III: Testing Mandate
+- No implementation before failing tests
+- No database mocks — use a real test database
+```
+
+The Orchestrator reads the constitution at INIT and injects every rule into all Task Contracts' `must_respect` field. **Define once, enforced everywhere, by every agent automatically.**
+
+Full template: `references/constitution-guide.md`
+
+### `[NEEDS CLARIFICATION]` Mandatory Uncertainty Markers
+
+When a requirement cannot be specified without a user decision, the ProductOwner must write `[NEEDS CLARIFICATION: <question>]` — never guess:
+
+```
+| FR-2 | [NEEDS CLARIFICATION: does this restriction also apply to admin users?] | AC-2 | Must |
+```
+
+The Orchestrator scans the PRD at the confirmation gate and lists every unresolved marker. **The confirmation package is not presented until all markers are resolved.**
+
+### Given/When/Then Acceptance Criteria
+
+All AC-N and RAC-N items use the precise three-part format:
+
+```
+AC-1 — Avatar Upload
+Given  the user is on the settings page and logged in
+When   the user clicks "Upload Avatar" and selects a JPEG under 5MB
+Then   the avatar updates immediately; the old avatar is replaced; a success toast appears
+
+Edge cases:
+- file > 5MB: show "File too large. Maximum 5MB."
+- non-JPEG/PNG: show "Only JPEG and PNG are supported."
+```
+
+The "Then" clause is the Tester's direct assertion. Edge cases are additional test cases. No more guessing what an AC means to test.
 
 ---
 

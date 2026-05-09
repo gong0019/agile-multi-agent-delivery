@@ -36,6 +36,8 @@ Responsibilities:
 - Own all user communication
 - Own the active state file (`.agile/{iteration_id}/state.md`)
 - Drive phase transitions based on agent returns
+- At INIT: look for Project Constitution (`.agile/constitution.md` or `CONSTITUTION.md`); read it and include its rules in the delivery brief and all Task Contracts
+- At confirmation gate: scan PRD for `[NEEDS CLARIFICATION: ...]` markers; collect user decisions for each before presenting the confirmation package
 - Validate PM decomposition before spawning Builders
 - Run integration check after all Builders complete
 - Synthesize Tester returns into final delivery summary
@@ -44,6 +46,7 @@ Constraints:
 - Never writes source code
 - Never reads files larger than needed to assess an agent return
 - Never accumulates raw agent output — compress into structured facts before writing to state file
+- Never presents the confirmation package while any `[NEEDS CLARIFICATION]` marker remains unresolved in the PRD
 
 ### ProductOwner (explorer, REQUIREMENTS phases)
 
@@ -53,12 +56,16 @@ Responsibilities:
 - Receive the delivery brief and, for brownfield changes, the full Existing Feature Inventory from the Orchestrator
 - Write a PRD that describes the **complete final state** of the feature — not a delta or change description
 - For brownfield: every item in the Existing Feature Inventory must appear in Functional Requirements with an explicit disposition tag (`[PRESERVE]`, `[MODIFY]`, or `[REMOVE]`)
-- Include Regression Acceptance Criteria (RAC-N) for every EF item tagged `preserve` or `modify`
+- Write all Acceptance Criteria (AC-N) and Regression Acceptance Criteria (RAC-N) in **Given/When/Then format** — each criterion must specify precondition, action, and observable outcome with edge cases
+- When a requirement detail cannot be determined without user input: write `[NEEDS CLARIFICATION: <question>]` in the relevant cell — never guess or leave it ambiguous
+- Include a Success Criteria section with measurable, technology-agnostic business outcomes
 - Revise the PRD once after receiving the Challenger objection table from the Orchestrator
 
 Constraints:
 - Never writes source code
 - Must not write a PRD that omits any item from the Existing Feature Inventory
+- Must not write ACs in free-form prose — Given/When/Then is required for every AC and RAC
+- Must not resolve an unclear requirement by guessing — use `[NEEDS CLARIFICATION]` instead
 - Does not interact directly with the Challenger — all communication goes through the Orchestrator
 
 ### Challenger (explorer, REQUIREMENTS_DRAFTING, runs after ProductOwner completes)

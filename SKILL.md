@@ -96,6 +96,9 @@ All skill-generated files live under `.agile/` in the repository root. This keep
 Before doing any substantial work:
 
 1. Read repository rules already required by the environment.
+1b. Look for a **Project Constitution** — check `.agile/constitution.md`, then `CONSTITUTION.md` in the project root.
+   - If found: read it. Record it in the delivery brief under "Constitution Rules." Every Task Contract in this iteration will inherit these rules in its `must_respect` field. The constitution is non-negotiable — no agent may silently skip a constitution rule.
+   - If not found: proceed without one. Optionally note to the user that creating one (`references/constitution-guide.md`) would give all future agents consistent project-wide constraints.
 2. Classify the request and read accordingly:
    - **greenfield** (new module, page, or feature with zero existing code in that area): inspect minimal code and docs needed to understand the request.
    - **brownfield** (modifying an existing module, page, or feature): read all files in the affected module to enumerate every existing behavior. Before drafting the brief, produce an **Existing Feature Inventory**:
@@ -144,6 +147,12 @@ The Challenger reviews the actual completed PRD, not just the delivery brief. Th
 ### 3. Requirements Review and Confirmation Gate
 
 The Orchestrator collects both returns and:
+
+0. **`[NEEDS CLARIFICATION]` gate**: scan the PRD for any `[NEEDS CLARIFICATION: ...]` markers in Functional Requirements or Acceptance Criteria. If any are found:
+   - List each one explicitly with its context.
+   - Present them to the user and collect decisions.
+   - Only after every marker is replaced with a concrete spec may the confirmation package be presented.
+   - Do not present the confirmation package while any `[NEEDS CLARIFICATION]` marker remains unresolved.
 
 1. Compiles a divergence table (objection vs. ProductOwner position).
 2. Presents one compact confirmation package to the user:
@@ -243,7 +252,7 @@ Builder Task Contract requirements:
 - `files_allowed`: exact owned files
 - `files_avoid`: all files owned by other Builders
 - `contracts`: list of Contract IDs this Builder must comply with
-- `must_respect`: API contracts (by Contract ID), migration constraints, coding standards
+- `must_respect`: API contracts (by Contract ID), migration constraints, coding standards, **all Project Constitution rules** (if a constitution was read at INIT — include each rule verbatim)
 - `expected_deliverable`: Agent Return with changed files, verification, risks, Contract Compliance table
 - `stop_when`: all owned files implemented and verified
 - `escalate_if`: any required change is outside `files_allowed`
